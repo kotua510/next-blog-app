@@ -132,6 +132,7 @@ const AdminCategoriesPage = () => {
           className="w-full max-w-sm border px-3 py-2 rounded"
         />
 
+        <div className="hidden sm:flex gap-2">
         <button
           onClick={() => setViewMode("list")}
           className={`px-3 py-2 border rounded ${
@@ -148,7 +149,8 @@ const AdminCategoriesPage = () => {
           }`}
         >
           縦2列
-        </button>
+          </button>
+          </div>
       </div>
 
       <ul

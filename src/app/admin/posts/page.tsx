@@ -149,6 +149,7 @@ const AdminPostsPage = () => {
           <option value="title">タイトル順</option>
         </select>
 
+        <div className="hidden sm:flex gap-2">
         <button
           onClick={() => setViewMode("list")}
           className={`px-3 py-2 border rounded ${
@@ -165,7 +166,8 @@ const AdminPostsPage = () => {
           }`}
         >
           縦2列
-        </button>
+          </button>
+          </div>
       </div>
 
       <ul
