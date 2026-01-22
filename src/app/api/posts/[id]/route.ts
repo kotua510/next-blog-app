@@ -2,6 +2,9 @@ import { prisma } from "@/lib/prisma";
 import { NextResponse, NextRequest } from "next/server";
 import { Post } from "@/generated/prisma/client";
 
+export const revalidate = 0; // ◀ サーバサイドのキャッシュを無効化する設定
+export const dynamic = "force-dynamic"; // ◀ 〃
+
 export const GET = async (
   req: NextRequest,
   { params }: {params: Promise<{ id: string }> }
@@ -22,7 +25,7 @@ export const GET = async (
         id: true,
         title: true,
         content: true,
-        coverImageURL: true,
+        coverImageKey: true,
         createdAt: true,
         categories: {
           select: {
@@ -49,15 +52,11 @@ export const GET = async (
   id: post.id,
   title: post.title,
   content: post.content,
-  coverImage: {
-    url: post.coverImageURL,
-    width: 1200,
-    height: 630,
-  },
+  coverImageKey: post.coverImageKey, // ← これだけ返す
   categories: post.categories.map((pc) => pc.category),
 };
 
-    return NextResponse.json(formattedPost);
+return NextResponse.json(formattedPost);
   } catch (error) {
     console.error(error);
     return NextResponse.json(

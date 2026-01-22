@@ -11,6 +11,8 @@ type AdminCategory = {
 
 type ViewMode = "list" | "grid";
 
+type SortKey = "new" | "old" | "name";
+
 const ITEMS_PER_PAGE = 8;
 
 const AdminCategoriesPage = () => {
@@ -21,6 +23,7 @@ const AdminCategoriesPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [viewMode, setViewMode] = useState<ViewMode>("list");
+  const [sortKey, setSortKey] = useState<SortKey>("new");
 
   // カテゴリ取得
   useEffect(() => {
@@ -47,6 +50,39 @@ const AdminCategoriesPage = () => {
 
     fetchCategories();
   }, []);
+
+  const filteredCategories = useMemo(() => {
+    return categories.filter((cat) =>
+      cat.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [categories, searchTerm]);
+
+
+  // ===== 並び替え =====
+  const sortedCategories = useMemo(() => {
+  const copy = [...filteredCategories];
+
+  switch (sortKey) {
+    case "new":
+      return copy.sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() -
+          new Date(a.createdAt).getTime()
+      );
+    case "old":
+      return copy.sort(
+        (a, b) =>
+          new Date(a.createdAt).getTime() -
+          new Date(b.createdAt).getTime()
+      );
+    case "name":
+      return copy.sort((a, b) =>
+        a.name.localeCompare(b.name, "ja")
+      );
+    default:
+      return copy;
+  }
+}, [filteredCategories, sortKey]);
 
   // 削除処理
   const handleDelete = async (categoryId: string, categoryName: string) => {
@@ -78,12 +114,6 @@ const AdminCategoriesPage = () => {
     }
   };
 
-  // 検索
-  const filteredCategories = useMemo(() => {
-    return categories.filter((cat) =>
-      cat.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [categories, searchTerm]);
 
   // ページネーション
   const totalPages = Math.ceil(
@@ -91,9 +121,10 @@ const AdminCategoriesPage = () => {
   );
 
   const paginatedCategories = useMemo(() => {
-    const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    return filteredCategories.slice(start, start + ITEMS_PER_PAGE);
-  }, [filteredCategories, currentPage]);
+  const start = (currentPage - 1) * ITEMS_PER_PAGE;
+  return sortedCategories.slice(start, start + ITEMS_PER_PAGE);
+}, [sortedCategories, currentPage]);
+
 
   // 検索時は1ページ目に戻す
   useEffect(() => {
@@ -131,6 +162,15 @@ const AdminCategoriesPage = () => {
           onChange={(e) => setSearchTerm(e.target.value)}
           className="w-full max-w-sm border px-3 py-2 rounded"
         />
+        <select
+  value={sortKey}
+  onChange={(e) => setSortKey(e.target.value as SortKey)}
+  className="border px-3 py-2 rounded"
+>
+  <option value="new">新しい順</option>
+  <option value="old">古い順</option>
+  <option value="name">名前順</option>
+</select>
 
         <div className="hidden sm:flex gap-2">
         <button

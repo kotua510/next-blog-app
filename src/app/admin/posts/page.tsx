@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useAuth } from "@/app/_hooks/useAuth";
 
 type AdminPost = {
   id: string;
@@ -9,19 +10,19 @@ type AdminPost = {
   createdAt: string;
   categories: {
     id: string;
-    category: {
-      id: string;
-      name: string;
-    };
+    name: string;
   }[];
 };
 
 type ViewMode = "list" | "grid";
 type SortKey = "new" | "old" | "title";
+type checkKey = "name" | "category"
 
 const ITEMS_PER_PAGE = 8;
 
 const AdminPostsPage = () => {
+  const { token, isLoading: authLoading } = useAuth();
+
   const [posts, setPosts] = useState<AdminPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -30,12 +31,31 @@ const AdminPostsPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [sortKey, setSortKey] = useState<SortKey>("new");
+  const [checkKey, setCheckKey] = useState<checkKey>("name")
 
+  // ===== 投稿一覧取得 =====
   useEffect(() => {
+    if (authLoading) return;
+
+    if (!token) {
+      setError("ログインしていません");
+      setLoading(false);
+      return;
+    }
+
     const fetchPosts = async () => {
       try {
-        const res = await fetch("/api/admin/posts", { cache: "no-store" });
-        if (!res.ok) throw new Error("投稿一覧の取得に失敗しました");
+        const res = await fetch("/api/admin/posts", {
+          cache: "no-store",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!res.ok) {
+          throw new Error("投稿一覧の取得に失敗しました");
+        }
+
         const data: AdminPost[] = await res.json();
         setPosts(data);
       } catch (e) {
@@ -46,13 +66,18 @@ const AdminPostsPage = () => {
     };
 
     fetchPosts();
-  }, []);
+  }, [token, authLoading]);
 
+  // ===== 削除 =====
   const handleDelete = async (postId: string, title: string) => {
     if (!window.confirm(`「${title}」を削除しますか？`)) return;
+    if (!token) return;
 
     const res = await fetch(`/api/admin/posts/${postId}`, {
       method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     });
 
     if (!res.ok) {
@@ -63,14 +88,33 @@ const AdminPostsPage = () => {
     setPosts((prev) => prev.filter((p) => p.id !== postId));
   };
 
-  // 検索
+  // ===== 検索 =====
   const filteredPosts = useMemo(() => {
-    return posts.filter((post) =>
-      post.title.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [posts, searchTerm]);
+    const keyword = searchTerm.toLowerCase();
 
-  // 並び替え
+      if (keyword === "") {
+    return posts;
+  }
+
+
+    switch (checkKey) {
+      case "name":
+        return posts.filter((post) =>
+      post.title.toLowerCase().includes(keyword)
+        );
+      case "category":
+        return posts.filter((post) =>
+          post.categories.some((category) =>
+            category.name.toLowerCase().includes(keyword)
+      )
+);
+      
+      default:
+        return posts;
+    }
+  }, [posts, searchTerm,checkKey]);
+
+  // ===== 並び替え =====
   const sortedPosts = useMemo(() => {
     const copy = [...filteredPosts];
 
@@ -96,7 +140,7 @@ const AdminPostsPage = () => {
     }
   }, [filteredPosts, sortKey]);
 
-  // ページ分割
+  // ===== ページネーション =====
   const totalPages = Math.ceil(sortedPosts.length / ITEMS_PER_PAGE);
 
   const paginatedPosts = useMemo(() => {
@@ -140,6 +184,15 @@ const AdminPostsPage = () => {
         />
 
         <select
+          value={checkKey}
+          onChange={(e) => setCheckKey(e.target.value as checkKey)}
+          className="border px-2 py-2 rounded"
+        >
+          <option value="name">名前検索</option>
+          <option value="category">カテゴリ検索</option>
+        </select>
+
+        <select
           value={sortKey}
           onChange={(e) => setSortKey(e.target.value as SortKey)}
           className="border px-2 py-2 rounded"
@@ -150,24 +203,24 @@ const AdminPostsPage = () => {
         </select>
 
         <div className="hidden sm:flex gap-2">
-        <button
-          onClick={() => setViewMode("list")}
-          className={`px-3 py-2 border rounded ${
-            viewMode === "list" ? "bg-blue-600 text-white" : ""
-          }`}
-        >
-          縦1列
-        </button>
-
-        <button
-          onClick={() => setViewMode("grid")}
-          className={`px-3 py-2 border rounded ${
-            viewMode === "grid" ? "bg-blue-600 text-white" : ""
-          }`}
-        >
-          縦2列
+          <button
+            onClick={() => setViewMode("list")}
+            className={`px-3 py-2 border rounded ${
+              viewMode === "list" ? "bg-blue-600 text-white" : ""
+            }`}
+          >
+            縦1列
           </button>
-          </div>
+
+          <button
+            onClick={() => setViewMode("grid")}
+            className={`px-3 py-2 border rounded ${
+              viewMode === "grid" ? "bg-blue-600 text-white" : ""
+            }`}
+          >
+            縦2列
+          </button>
+        </div>
       </div>
 
       <ul
@@ -188,18 +241,17 @@ const AdminPostsPage = () => {
               <span className="font-medium">{post.title}</span>
 
               {post.categories?.length > 0 && (
-  <div className="flex flex-wrap gap-1">
-    {post.categories.map((pc) => (
-      <span
-        key={pc.id}
-        className="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-700"
-      >
-        {pc.category.name}
-      </span>
-    ))}
-  </div>
-)}
-
+                <div className="flex flex-wrap gap-1">
+                  {post.categories.map((cat) => (
+                    <span
+                      key={cat.id}
+                      className="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-700"
+                    >
+                      {cat.name}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="flex gap-2 shrink-0">

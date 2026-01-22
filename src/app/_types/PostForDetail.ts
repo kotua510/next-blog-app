@@ -4,13 +4,9 @@ export type Category = {
 };
 
 export type PostForDetail = {
-  id: number;
+  id: string;
   title: string;
   content: string;
-  coverImage: {
-    url: string;
-    width: number;
-    height: number;
-  };
+  coverImageKey: string | null;
   categories: Category[];
 };

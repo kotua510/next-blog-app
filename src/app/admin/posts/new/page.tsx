@@ -1,11 +1,17 @@
 "use client";
+
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpinner } from "@fortawesome/free-solid-svg-icons";
 import { twMerge } from "tailwind-merge";
+import { useAuth } from "@/app/_hooks/useAuth";
+import { supabase } from "@/utils/supabase";
+import CryptoJS from "crypto-js";
 
-// カテゴリをフェッチしたときのレスポンスのデータ型
+/* ==========================
+   型定義
+   ========================== */
 type CategoryApiResponse = {
   id: string;
   name: string;
@@ -13,147 +19,179 @@ type CategoryApiResponse = {
   updatedAt: string;
 };
 
-// 投稿記事のカテゴリ選択用のデータ型
 type SelectableCategory = {
   id: string;
   name: string;
   isSelect: boolean;
 };
 
-// 投稿記事の新規作成のページ
+/* ==========================
+   ユーティリティ
+   ========================== */
+const calculateMD5Hash = async (file: File): Promise<string> => {
+  const buffer = await file.arrayBuffer();
+  const wordArray = CryptoJS.lib.WordArray.create(buffer);
+  return CryptoJS.MD5(wordArray).toString();
+};
+
+const BUCKET_NAME = "cover-image";
+
 const Page: React.FC = () => {
+  const router = useRouter();
+  const { isLoading: authLoading, session, token } = useAuth();
+
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [fetchErrorMsg, setFetchErrorMsg] = useState<string | null>(null);
 
   const [newTitle, setNewTitle] = useState("");
   const [newContent, setNewContent] = useState("");
-  const [newCoverImageURL, setNewCoverImageURL] = useState("");
+  const [coverImageKey, setCoverImageKey] = useState<string | undefined>();
 
-  const router = useRouter();
-
-  // カテゴリ配列 (State)。取得中と取得失敗時は null、既存カテゴリが0個なら []
   const [checkableCategories, setCheckableCategories] = useState<
     SelectableCategory[] | null
   >(null);
 
-  // コンポーネントがマウントされたとき (初回レンダリングのとき) に1回だけ実行
+  const [categoryCols, setCategoryCols] = useState<2 | 3>(2);
+
+  /* ==========================
+     認証チェック
+     ========================== */
   useEffect(() => {
-    // ウェブAPI (/api/categories) からカテゴリの一覧をフェッチする関数の定義
+    if (authLoading) return;
+    if (!session) router.replace("/login");
+  }, [authLoading, session, router]);
+
+  /* ==========================
+     カテゴリ取得
+     ========================== */
+  useEffect(() => {
+    if (!session) return;
+
     const fetchCategories = async () => {
       try {
         setIsLoading(true);
 
-        // フェッチ処理の本体
-        const requestUrl = "/api/categories";
-        const res = await fetch(requestUrl, {
+        const res = await fetch("/api/categories", {
           method: "GET",
           cache: "no-store",
         });
 
-        // レスポンスのステータスコードが200以外の場合 (カテゴリのフェッチに失敗した場合)
         if (!res.ok) {
-          setCheckableCategories(null);
-          throw new Error(`${res.status}: ${res.statusText}`); // -> catch節に移動
+          throw new Error(`${res.status}: ${res.statusText}`);
         }
 
-        // レスポンスのボディをJSONとして読み取りカテゴリ配列 (State) にセット
         const apiResBody = (await res.json()) as CategoryApiResponse[];
+
         setCheckableCategories(
-          apiResBody.map((body) => ({
-            id: body.id,
-            name: body.name,
+          apiResBody.map((c) => ({
+            id: c.id,
+            name: c.name,
             isSelect: false,
           }))
         );
       } catch (error) {
         const errorMsg =
           error instanceof Error
-            ? `カテゴリの一覧のフェッチに失敗しました: ${error.message}`
-            : `予期せぬエラーが発生しました ${error}`;
+            ? `カテゴリ取得失敗: ${error.message}`
+            : `予期せぬエラー: ${error}`;
         console.error(errorMsg);
         setFetchErrorMsg(errorMsg);
+        setCheckableCategories(null);
       } finally {
-        // 成功した場合も失敗した場合もローディング状態を解除
         setIsLoading(false);
       }
     };
 
     fetchCategories();
-  }, []);
+  }, [session]);
 
-  // チェックボックスの状態 (State) を更新する関数
-  const switchCategoryState = (categoryId: string) => {
+  const switchCategoryState = (id: string) => {
     if (!checkableCategories) return;
-
     setCheckableCategories(
-      checkableCategories.map((category) =>
-        category.id === categoryId
-          ? { ...category, isSelect: !category.isSelect }
-          : category
+      checkableCategories.map((c) =>
+        c.id === id ? { ...c, isSelect: !c.isSelect } : c
       )
     );
   };
 
-  const updateNewTitle = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // ここにタイトルのバリデーション処理を追加する
-    setNewTitle(e.target.value);
+  /* ==========================
+     画像アップロード
+     ========================== */
+  const handleImageUpload = async (file: File) => {
+    const hash = await calculateMD5Hash(file);
+    const path = `private/${hash}`;
+
+    const { data, error } = await supabase.storage
+      .from(BUCKET_NAME)
+      .upload(path, file, { upsert: true });
+
+    if (error || !data) {
+      alert("画像アップロードに失敗しました");
+      return;
+    }
+
+    // ★ DBに保存する値
+    setCoverImageKey(data.path);
   };
 
-  const updateNewContent = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    // ここに本文のバリデーション処理を追加する
-    setNewContent(e.target.value);
-  };
-
-  const updateNewCoverImageURL = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // ここにカバーイメージURLのバリデーション処理を追加する
-    setNewCoverImageURL(e.target.value);
-  };
-
-  // フォームの送信処理
+  /* ==========================
+     投稿処理
+     ========================== */
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault(); // この処理をしないとページがリロードされるので注意
+    e.preventDefault();
+    if (!token) return;
 
     setIsSubmitting(true);
 
-    // ▼▼ 追加 ウェブAPI (/api/admin/posts) にPOSTリクエストを送信する処理
     try {
       const requestBody = {
         title: newTitle,
         content: newContent,
-        coverImageURL: newCoverImageURL,
+        coverImageKey,
         categoryIds: checkableCategories
           ? checkableCategories.filter((c) => c.isSelect).map((c) => c.id)
           : [],
       };
-      const requestUrl = "/api/admin/posts";
-      console.log(`${requestUrl} => ${JSON.stringify(requestBody, null, 2)}`);
-      const res = await fetch(requestUrl, {
+
+      const res = await fetch("/api/admin/posts", {
         method: "POST",
         cache: "no-store",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(requestBody),
       });
 
       if (!res.ok) {
-        throw new Error(`${res.status}: ${res.statusText}`); // -> catch節に移動
+        throw new Error(`${res.status}: ${res.statusText}`);
       }
 
       const postResponse = await res.json();
-      setIsSubmitting(false);
-      router.push(`/posts/${postResponse.id}`); // 投稿記事の詳細ページに移動
+      router.push(`/posts/${postResponse.id}`);
     } catch (error) {
-      const errorMsg =
+      const msg =
         error instanceof Error
-          ? `投稿記事のPOSTリクエストに失敗しました\n${error.message}`
-          : `予期せぬエラーが発生しました\n${error}`;
-      console.error(errorMsg);
-      window.alert(errorMsg);
+          ? error.message
+          : "予期せぬエラーが発生しました";
+      alert(msg);
+    } finally {
       setIsSubmitting(false);
     }
   };
+
+  /* ==========================
+     表示制御
+     ========================== */
+  if (authLoading || !session) {
+    return (
+      <div className="text-gray-500">
+        <FontAwesomeIcon icon={faSpinner} className="mr-1 animate-spin" />
+        認証確認中...
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -168,9 +206,20 @@ const Page: React.FC = () => {
     return <div className="text-red-500">{fetchErrorMsg}</div>;
   }
 
+  /* ==========================
+     JSX
+     ========================== */
   return (
-    <main>
-      <div className="mb-4 text-2xl font-bold">投稿記事の新規作成</div>
+    <main className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">投稿記事の新規作成</h1>
+        <button
+          onClick={() => router.push("/admin/posts")}
+          className="rounded bg-gray-200 px-4 py-2 hover:bg-gray-300"
+        >
+          記事一覧へ
+        </button>
+      </div>
 
       {isSubmitting && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
@@ -179,7 +228,7 @@ const Page: React.FC = () => {
               icon={faSpinner}
               className="mr-2 animate-spin text-gray-500"
             />
-            <div className="flex items-center text-gray-500">処理中...</div>
+            <div className="text-gray-500">処理中...</div>
           </div>
         </div>
       )}
@@ -188,84 +237,88 @@ const Page: React.FC = () => {
         onSubmit={handleSubmit}
         className={twMerge("space-y-4", isSubmitting && "opacity-50")}
       >
-        <div className="space-y-1">
-          <label htmlFor="title" className="block font-bold">
-            タイトル
-          </label>
+        <div>
+          <label className="block font-bold">タイトル</label>
           <input
-            type="text"
-            id="title"
-            name="title"
             className="w-full rounded-md border-2 px-2 py-1"
             value={newTitle}
-            onChange={updateNewTitle}
-            placeholder="タイトルを記入してください"
+            onChange={(e) => setNewTitle(e.target.value)}
             required
           />
         </div>
 
-        <div className="space-y-1">
-          <label htmlFor="content" className="block font-bold">
-            本文
-          </label>
+        <div>
+          <label className="block font-bold">本文</label>
           <textarea
-            id="content"
-            name="content"
             className="h-48 w-full rounded-md border-2 px-2 py-1"
             value={newContent}
-            onChange={updateNewContent}
-            placeholder="本文を記入してください"
+            onChange={(e) => setNewContent(e.target.value)}
             required
           />
         </div>
 
-        <div className="space-y-1">
-          <label htmlFor="coverImageURL" className="block font-bold">
-            カバーイメージ (URL)
-          </label>
+        <div>
+          <label className="block font-bold">カバー画像</label>
           <input
-            type="url"
-            id="coverImageURL"
-            name="coverImageURL"
-            className="w-full rounded-md border-2 px-2 py-1"
-            value={newCoverImageURL}
-            onChange={updateNewCoverImageURL}
-            placeholder="カバーイメージのURLを記入してください"
-            required
+            type="file"
+            accept="image/*"
+            onChange={async (e) => {
+              if (!e.target.files || e.target.files.length === 0) return;
+              await handleImageUpload(e.target.files[0]);
+            }}
           />
+          {coverImageKey && (
+            <div className="text-xs break-all text-gray-500">
+              coverImageKey: {coverImageKey}
+            </div>
+          )}
         </div>
 
-        <div className="space-y-1">
-          <div className="font-bold">タグ</div>
-          <div className="flex flex-wrap gap-x-3.5">
-            {checkableCategories.length > 0 ? (
-              checkableCategories.map((c) => (
-                <label key={c.id} className="flex space-x-1">
-                  <input
-                    id={c.id}
-                    type="checkbox"
-                    checked={c.isSelect}
-                    className="mt-0.5 cursor-pointer"
-                    onChange={() => switchCategoryState(c.id)}
-                  />
-                  <span className="cursor-pointer">{c.name}</span>
-                </label>
-              ))
-            ) : (
-              <div>選択可能なカテゴリが存在しません。</div>
-            )}
-          </div>
+        <div className="flex items-center gap-2">
+          <span className="font-bold">タグ表示</span>
+          <button
+            type="button"
+            onClick={() => setCategoryCols(2)}
+            className={`px-2 py-1 rounded border ${
+              categoryCols === 2 ? "bg-blue-600 text-white" : ""
+            }`}
+          >
+            2列
+          </button>
+          <button
+            type="button"
+            onClick={() => setCategoryCols(3)}
+            className={`px-2 py-1 rounded border ${
+              categoryCols === 3 ? "bg-blue-600 text-white" : ""
+            }`}
+          >
+            3列
+          </button>
+        </div>
+
+        <div
+          className={twMerge(
+            "grid gap-3",
+            categoryCols === 2 ? "grid-cols-2" : "grid-cols-3"
+          )}
+        >
+          {checkableCategories.map((c) => (
+            <label key={c.id} className="flex gap-1">
+              <input
+                type="checkbox"
+                checked={c.isSelect}
+                onChange={() => switchCategoryState(c.id)}
+              />
+              <span>{c.name}</span>
+            </label>
+          ))}
         </div>
 
         <div className="flex justify-end">
           <button
             type="submit"
-            className={twMerge(
-              "rounded-md px-5 py-1 font-bold",
-              "bg-indigo-500 text-white hover:bg-indigo-600",
-              "disabled:cursor-not-allowed"
-            )}
             disabled={isSubmitting}
+            className="rounded-md bg-indigo-500 px-5 py-1 font-bold text-white hover:bg-indigo-600 disabled:opacity-50"
           >
             記事を投稿
           </button>

@@ -16,10 +16,12 @@ const dummyPosts: Post[] = [
       {
         id: "587ac4ab-92de-450c-9423-5e091d16ecb5",
         name: "TypeScript",
+        createdAt:"2024-10-26T22:48:30.156Z",
       },
       {
         id: "f8a4c465-2e7f-455d-aa1d-5098e9d0086d",
         name: "Next.js",
+        createdAt:"2024-11-26T22:48:30.156Z",
       },
     ],
   },
@@ -38,6 +40,7 @@ const dummyPosts: Post[] = [
       {
         id: "587ac4ab-92de-450c-9423-5e091d16ecb5",
         name: "TypeScript",
+        createdAt:"2025-1-20T22:48:30.156Z",
       },
     ],
   },
@@ -56,10 +59,12 @@ const dummyPosts: Post[] = [
       {
         id: "587ac4ab-92de-450c-9423-5e091d16ecb5",
         name: "TypeScript",
+        createdAt:"2025-1-2T22:48:30.156Z",
       },
       {
         id: "5cf22131-bac8-4bd0-be8e-757cec2bcc9a",
         name: "React",
+        createdAt:"2024-10-20T22:48:30.156Z",
       },
     ],
   },
