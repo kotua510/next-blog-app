@@ -48,6 +48,9 @@ const Page: React.FC = () => {
   const [newContent, setNewContent] = useState("");
   const [coverImageKey, setCoverImageKey] = useState<string | undefined>();
 
+  // ★ 画像プレビュー用
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+
   const [checkableCategories, setCheckableCategories] = useState<
     SelectableCategory[] | null
   >(null);
@@ -131,7 +134,6 @@ const Page: React.FC = () => {
       return;
     }
 
-    // ★ DBに保存する値
     setCoverImageKey(data.path);
   };
 
@@ -182,6 +184,17 @@ const Page: React.FC = () => {
   };
 
   /* ==========================
+     プレビューURL解放
+     ========================== */
+  useEffect(() => {
+    return () => {
+      if (imagePreviewUrl) {
+        URL.revokeObjectURL(imagePreviewUrl); //ブラウザから一時的なURLを発行
+      }
+    };
+  }, [imagePreviewUrl]);
+
+  /* ==========================
      表示制御
      ========================== */
   if (authLoading || !session) {
@@ -211,14 +224,24 @@ const Page: React.FC = () => {
      ========================== */
   return (
     <main className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center">
         <h1 className="text-2xl font-bold">投稿記事の新規作成</h1>
-        <button
-          onClick={() => router.push("/admin/posts")}
-          className="rounded bg-gray-200 px-4 py-2 hover:bg-gray-300"
-        >
-          記事一覧へ
-        </button>
+
+        <div className="ml-auto flex items-center gap-2">
+          <button
+            onClick={() => router.push("/admin")}
+            className="rounded bg-gray-200 px-4 py-2 hover:bg-gray-300"
+          >
+            管理機能一覧へ
+          </button>
+
+          <button
+            onClick={() => router.push("/admin/posts")}
+            className="rounded bg-gray-200 px-4 py-2 hover:bg-gray-300"
+          >
+            記事一覧へ
+          </button>
+        </div>
       </div>
 
       {isSubmitting && (
@@ -258,28 +281,54 @@ const Page: React.FC = () => {
         </div>
 
         <div>
-          <label className="block font-bold">カバー画像</label>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={async (e) => {
-              if (!e.target.files || e.target.files.length === 0) return;
-              await handleImageUpload(e.target.files[0]);
-            }}
-          />
-          {coverImageKey && (
-            <div className="text-xs break-all text-gray-500">
-              coverImageKey: {coverImageKey}
-            </div>
-          )}
-        </div>
+  <label className="block font-bold mb-1">カバー画像</label>
+
+  {/* ボタン風ファイル選択 */}
+  <label
+    htmlFor="cover-image"
+    className="inline-block cursor-pointer rounded-md bg-indigo-500 px-5 py-1 font-bold text-white hover:bg-indigo-600"
+  >
+    画像を選択
+  </label>
+
+  <input
+    id="cover-image"
+    type="file"
+    accept="image/*"
+    className="hidden"
+    onChange={async (e) => {
+      if (!e.target.files || e.target.files.length === 0) return;
+      const file = e.target.files[0];
+
+      setImagePreviewUrl(URL.createObjectURL(file));
+      await handleImageUpload(file);
+    }}
+  />
+
+  {imagePreviewUrl && (
+    <>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={imagePreviewUrl}
+        alt="cover preview"
+        className="mt-2 h-32 rounded border object-contain"
+      />
+    </>
+  )}
+
+  {coverImageKey && (
+    <div className="mt-1 break-all text-xs text-gray-500">
+      coverImageKey: {coverImageKey}
+    </div>
+  )}
+</div>
 
         <div className="flex items-center gap-2">
           <span className="font-bold">タグ表示</span>
           <button
             type="button"
             onClick={() => setCategoryCols(2)}
-            className={`px-2 py-1 rounded border ${
+            className={`rounded border px-2 py-1 ${
               categoryCols === 2 ? "bg-blue-600 text-white" : ""
             }`}
           >
@@ -288,7 +337,7 @@ const Page: React.FC = () => {
           <button
             type="button"
             onClick={() => setCategoryCols(3)}
-            className={`px-2 py-1 rounded border ${
+            className={`rounded border px-2 py-1 ${
               categoryCols === 3 ? "bg-blue-600 text-white" : ""
             }`}
           >

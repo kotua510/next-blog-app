@@ -29,7 +29,7 @@ const Page: React.FC = () => {
   <br />
   <span className="ml-6">
     URL:
-    <Link className="ml-2 text-blue-500 underline" href="/admin/posts">
+    <Link className="ml-2 text-blue-500 underline" href="/admin/posts/new">
       /admin/posts/new
     </Link>
   </span>
@@ -41,7 +41,7 @@ const Page: React.FC = () => {
   <br />
   <span className="ml-6">
     URL:
-    <Link className="ml-2 text-blue-500 underline" href="/admin/posts">
+    <Link className="ml-2 text-blue-500 underline" href="/admin/categories">
       /admin/categories
     </Link>
   </span>
@@ -53,7 +53,7 @@ const Page: React.FC = () => {
   <br />
   <span className="ml-6">
     URL:
-    <Link className="ml-2 text-blue-500 underline" href="/admin/posts">
+    <Link className="ml-2 text-blue-500 underline" href="/admin/categories/new">
       /admin/categories/new
     </Link>
   </span>

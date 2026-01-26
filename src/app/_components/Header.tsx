@@ -1,102 +1,77 @@
 "use client";
+
 import Link from "next/link";
 import { twMerge } from "tailwind-merge";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faFish } from "@fortawesome/free-solid-svg-icons";
-import { supabase } from "@/utils/supabase"; // ◀ 追加
-import { useAuth } from "@/app/_hooks/useAuth"; // ◀ 追加
-import { useRouter } from "next/navigation"; // ◀ 追加
-import { useState } from "react";
-import { faEllipsisVertical } from "@fortawesome/free-solid-svg-icons";
-
+import { supabase } from "@/utils/supabase";
+import { useAuth } from "@/app/_hooks/useAuth";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 const Header: React.FC = () => {
-  // ▼ 追加
   const router = useRouter();
   const { isLoading, session } = useAuth();
-  const [menuOpen, setMenuOpen] = useState(false);
+
+  // ✅ hydration 対策
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) return null;
+
   const logout = async () => {
     await supabase.auth.signOut();
     router.replace("/");
   };
-  // ▲ 追加
 
   return (
     <header>
-  <div className="bg-slate-800 py-2">
-    <div
-      className={twMerge(
-        "mx-4 max-w-2xl md:mx-auto",
-        "flex items-center justify-between",
-        "text-lg font-bold text-white"
-      )}
-    >
-      {/* ===== 左：ロゴ ===== */}
-      <Link href="/">
-        <FontAwesomeIcon icon={faFish} className="mr-1" />
-        コツァ’s ブログアプリ
-      </Link>
-
-      {/* ===== 右：三点リーダー ===== */}
-      <div className="relative">
-        {/* 三点ボタン */}
-        <button
-          onClick={() => setMenuOpen((prev) => !prev)}
-          className="p-2 rounded hover:bg-slate-700"
-          aria-label="menu"
+      <div className="bg-slate-800 py-2">
+        <div
+          className={twMerge(
+            "mx-4 max-w-2xl md:mx-auto",
+            "flex items-center",
+            "text-lg font-bold text-white"
+          )}
         >
-          <FontAwesomeIcon icon={faEllipsisVertical} />
-        </button>
+          {/* 基準コンテナ */}
+          <div className="relative flex w-full items-center justify-between">
+            {/* 左：ロゴ */}
+            <div>
+              <Link href="/">
+                <FontAwesomeIcon icon={faFish} className="mr-1" />
+                コツァ’s ブログアプリ
+              </Link>
+            </div>
 
-        {/* メニュー */}
-        {menuOpen && (
-          <div className="absolute right-0 mt-2 w-44 rounded-md bg-white text-black shadow-lg">
-            <ul className="flex flex-col text-sm font-normal">
-              {/* Login / Logout */}
+            {/* 中央：Login / Logout */}
+            <div className="absolute left-1/2 -translate-x-1/2">
               {!isLoading &&
                 (session ? (
-                  <li>
-                    <button
-                      onClick={() => {
-                        logout();
-                        setMenuOpen(false);
-                      }}
-                      className="w-full px-4 py-2 text-left hover:bg-gray-100"
-                    >
-                      Logout
-                    </button>
-                  </li>
+                  <button
+                    onClick={logout}
+                    className="hover:underline"
+                  >
+                    Logout
+                  </button>
                 ) : (
-                  <li>
-                    <Link
-                      href="/login"
-                      onClick={() => setMenuOpen(false)}
-                      className="block px-4 py-2 hover:bg-gray-100"
-                    >
-                      Login
-                    </Link>
-                  </li>
+                  <Link href="/login" className="hover:underline">
+                    Login
+                  </Link>
                 ))}
+            </div>
 
-              {/* About */}
-              <li>
-                <Link
-                  href="/about"
-                  onClick={() => setMenuOpen(false)}
-                  className="block px-4 py-2 hover:bg-gray-100"
-                >
-                  このサイトについて
-                </Link>
-              </li>
-            </ul>
+            {/* 右：固定リンク */}
+            <div className="flex gap-x-6">
+              <Link href="/about">このサイトについて</Link>
+            </div>
           </div>
-        )}
+        </div>
       </div>
-    </div>
-  </div>
-</header>
-
-
+    </header>
   );
 };
 

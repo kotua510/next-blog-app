@@ -37,8 +37,12 @@ const EditPostPage = () => {
   const [allCategories, setAllCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [categoryView, setCategoryView] = useState<CategoryView>("col2");
+  const [categoryView] = useState<CategoryView>("col2");
   const [categorySearch, setCategorySearch] = useState("");
+
+  // 🔽 画像表示用
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+  const [storedImageUrl, setStoredImageUrl] = useState<string | null>(null);
 
   /* ---------------- 初期データ取得 ---------------- */
   useEffect(() => {
@@ -60,6 +64,15 @@ const EditPostPage = () => {
         setContent(post.content);
         setCoverImageKey(post.coverImageKey ?? null);
         setCategoryIds(post.categories.map((c) => c.id));
+
+        // 🔽 既存画像（private）を表示するため signed URL を取得
+        if (post.coverImageKey) {
+          const { data } = await supabase.storage
+            .from("cover-image")
+            .createSignedUrl(post.coverImageKey, 60 * 5);
+
+          setStoredImageUrl(data?.signedUrl ?? null);
+        }
 
         const catRes = await fetch("/api/categories", {
           cache: "no-store",
@@ -94,33 +107,36 @@ const EditPostPage = () => {
   };
 
   /* ---------------- 画像アップロード ---------------- */
-  const handleImageUpload = async (
-  e: React.ChangeEvent<HTMLInputElement>
-) => {
-  if (!e.target.files?.[0]) return;
-  if (!session) {
-    alert("ログイン情報がありません");
-    return;
-  }
+  const handleImageUpload = async (file: File) => {
+    if (!session) {
+      alert("ログイン情報がありません");
+      return;
+    }
 
-  const file = e.target.files[0];
-  const ext = file.name.split(".").pop();
+    const ext = file.name.split(".").pop();
+    const fileName = `private/covers/${crypto.randomUUID()}.${ext}`;
 
-  // 🔽 private 配下に保存
-  const fileName = `private/covers/${crypto.randomUUID()}.${ext}`;
+    const { error } = await supabase.storage
+      .from("cover-image")
+      .upload(fileName, file, { upsert: true });
 
-  const { error } = await supabase.storage
-    .from("cover-image")
-    .upload(fileName, file, { upsert: true });
+    if (error) {
+      console.error(error);
+      alert("画像アップロード失敗");
+      return;
+    }
 
-  if (error) {
-    console.error(error);
-    alert("画像アップロード失敗");
-    return;
-  }
+    setCoverImageKey(fileName);
+  };
 
-  setCoverImageKey(fileName);
-};
+  /* ---------------- プレビューURL後始末 ---------------- */
+  useEffect(() => {
+    return () => {
+      if (imagePreviewUrl) {
+        URL.revokeObjectURL(imagePreviewUrl);
+      }
+    };
+  }, [imagePreviewUrl]);
 
   /* ---------------- 更新 ---------------- */
   const handleUpdate = async () => {
@@ -139,8 +155,7 @@ const EditPostPage = () => {
     });
 
     if (!res.ok) {
-      const err = await res.json();
-      alert(err.error ?? "更新に失敗しました");
+      alert("更新に失敗しました");
       return;
     }
 
@@ -170,17 +185,18 @@ const EditPostPage = () => {
 
   return (
     <main className="space-y-6 max-w-2xl">
-      {/* ナビ */}
-      <header className="flex gap-2">
-        <Link href="/admin/posts" className="px-3 py-2 bg-gray-200 rounded">
-          投稿記事一覧
-        </Link>
-        <Link href="/admin" className="px-3 py-2 bg-gray-200 rounded">
-          管理画面トップ
-        </Link>
+      {/* ヘッダー */}
+      <header className="flex items-center justify-between">
+        <h1 className="text-xl font-bold">投稿編集</h1>
+        <div className="flex gap-2">
+          <Link href="/admin/posts" className="px-3 py-2 bg-gray-200 rounded">
+            投稿記事一覧
+          </Link>
+          <Link href="/admin" className="px-3 py-2 bg-gray-200 rounded">
+            管理画面トップ
+          </Link>
+        </div>
       </header>
-
-      <h1 className="text-xl font-bold">投稿編集</h1>
 
       {/* タイトル */}
       <div>
@@ -202,26 +218,51 @@ const EditPostPage = () => {
         />
       </div>
 
-      {/* カバー画像（キーのみ表示） */}
+      {/* 画像選択 */}
       <div>
-        <label className="font-semibold block mb-1">カバー画像</label>
+        <label
+          htmlFor="cover-image"
+          className="inline-block cursor-pointer rounded-md bg-indigo-500 px-5 py-1 font-bold text-white hover:bg-indigo-600"
+        >
+          画像を選択
+        </label>
 
-        {coverImageKey && (
-          <div className="mb-2 text-sm">
-            <div className="text-gray-600">現在の画像キー</div>
-            <div className="bg-gray-100 p-2 rounded break-all">
-              {coverImageKey}
-            </div>
-          </div>
+        <input
+          id="cover-image"
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={async (e) => {
+            if (!e.target.files?.[0]) return;
+            const file = e.target.files[0];
+            setImagePreviewUrl(URL.createObjectURL(file));
+            await handleImageUpload(file);
+          }}
+        />
+
+        {/* 🔽 画像表示 */}
+        {imagePreviewUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={imagePreviewUrl}
+            alt="preview"
+            className="mt-2 h-32 rounded border object-contain"
+          />
+        ) : (
+          storedImageUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={storedImageUrl}
+              alt="stored"
+              className="mt-2 h-32 rounded border object-contain"
+            />
+          )
         )}
-
-        <input type="file" accept="image/*" onChange={handleImageUpload} />
       </div>
 
       {/* カテゴリ */}
       <div>
         <label className="font-semibold block mb-1">カテゴリ</label>
-
         <input
           className="border px-2 py-1 w-full mb-2"
           placeholder="カテゴリ検索"
@@ -229,11 +270,7 @@ const EditPostPage = () => {
           onChange={(e) => setCategorySearch(e.target.value)}
         />
 
-        <div
-          className={`grid gap-1 ${
-            categoryView === "col2" ? "grid-cols-2" : "grid-cols-3"
-          }`}
-        >
+        <div className="grid grid-cols-2 gap-1">
           {filteredCategories.map((cat) => (
             <label key={cat.id} className="flex items-center gap-2">
               <input
