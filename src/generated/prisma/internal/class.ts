@@ -20,7 +20,7 @@ const config: runtime.GetPrismaClientConfig = {
   "clientVersion": "7.2.0",
   "engineVersion": "0c8ef2ce45c83248ab3df073180d5eda9e8be7a3",
   "activeProvider": "postgresql",
-  "inlineSchema": "// このファイルを更新したら...\n// 0. `npm run dev` や `npx prisma studio` を停止\n// 1. dev.db を削除\n// 2. npx prisma db push\n// 3. npx prisma generate\n// 4. npx prisma db seed\n\ngenerator client {\n  provider = \"prisma-client\"\n  output   = \"../src/generated/prisma\"\n}\n\ndatasource db {\n  provider = \"postgresql\" // 変更\n}\n\n// 投稿記事テーブル\nmodel Post {\n  id            String         @id @default(uuid())\n  title         String\n  content       String\n  coverImageKey String?\n  createdAt     DateTime       @default(now())\n  updatedAt     DateTime       @updatedAt\n  categories    PostCategory[]\n}\n\n// カテゴリテーブル\nmodel Category {\n  id        String         @id @default(uuid())\n  name      String         @unique\n  createdAt DateTime       @default(now())\n  updatedAt DateTime       @updatedAt\n  posts     PostCategory[]\n}\n\n// 投稿記事とカテゴリを紐づける中間テーブル\nmodel PostCategory {\n  id         String   @id @default(uuid())\n  postId     String\n  categoryId String\n  createdAt  DateTime @default(now())\n  updatedAt  DateTime @updatedAt\n  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)\n  post       Post     @relation(fields: [postId], references: [id], onDelete: Cascade)\n}\n",
+  "inlineSchema": "// このファイルを更新したら...\n// 0. `npm run dev` や `npx prisma studio` を停止\n// 1. dev.db を削除\n// 2. npx prisma db push\n// 3. npx prisma generate\n// 4. npx prisma db seed\n\ngenerator client {\n  provider = \"prisma-client\"\n  output   = \"../src/generated/prisma\"\n}\n\ndatasource db {\n  provider = \"postgresql\" // 変更\n}\n\n// 投稿記事テーブル\nmodel Post {\n  id            String         @id @default(uuid())\n  title         String\n  content       String\n  coverImageKey String?\n  createdAt     DateTime       @default(now())\n  updatedAt     DateTime       @updatedAt\n  categories    PostCategory[]\n  comments      Comment[]\n  likes         PostLike[]\n}\n\n// カテゴリテーブル\nmodel Category {\n  id        String         @id @default(uuid())\n  name      String         @unique\n  createdAt DateTime       @default(now())\n  updatedAt DateTime       @updatedAt\n  posts     PostCategory[]\n}\n\n// 投稿記事とカテゴリを紐づける中間テーブル\nmodel PostCategory {\n  id         String   @id @default(uuid())\n  postId     String\n  categoryId String\n  createdAt  DateTime @default(now())\n  updatedAt  DateTime @updatedAt\n  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)\n  post       Post     @relation(fields: [postId], references: [id], onDelete: Cascade)\n}\n\n// コメント\nmodel Comment {\n  id        String        @id @default(uuid())\n  content   String\n  createdAt DateTime      @default(now())\n  postId    String\n  post      Post          @relation(fields: [postId], references: [id], onDelete: Cascade)\n  likes     CommentLike[]\n}\n\n//記事いいね\nmodel PostLike {\n  id        String   @id @default(uuid())\n  visitorId String\n  createdAt DateTime @default(now())\n  postId    String\n  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)\n\n  @@unique([postId, visitorId]) // 同じ人の連打防止\n}\n\n//コメントいいね\nmodel CommentLike {\n  id        String   @id @default(uuid())\n  visitorId String\n  createdAt DateTime @default(now())\n  commentId String\n  comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)\n\n  @@unique([commentId, visitorId])\n}\n",
   "runtimeDataModel": {
     "models": {},
     "enums": {},
@@ -28,7 +28,7 @@ const config: runtime.GetPrismaClientConfig = {
   }
 }
 
-config.runtimeDataModel = JSON.parse("{\"models\":{\"Post\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"title\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"content\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"coverImageKey\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"categories\",\"kind\":\"object\",\"type\":\"PostCategory\",\"relationName\":\"PostToPostCategory\"}],\"dbName\":null},\"Category\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"name\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"posts\",\"kind\":\"object\",\"type\":\"PostCategory\",\"relationName\":\"CategoryToPostCategory\"}],\"dbName\":null},\"PostCategory\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"postId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"categoryId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"category\",\"kind\":\"object\",\"type\":\"Category\",\"relationName\":\"CategoryToPostCategory\"},{\"name\":\"post\",\"kind\":\"object\",\"type\":\"Post\",\"relationName\":\"PostToPostCategory\"}],\"dbName\":null}},\"enums\":{},\"types\":{}}")
+config.runtimeDataModel = JSON.parse("{\"models\":{\"Post\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"title\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"content\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"coverImageKey\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"categories\",\"kind\":\"object\",\"type\":\"PostCategory\",\"relationName\":\"PostToPostCategory\"},{\"name\":\"comments\",\"kind\":\"object\",\"type\":\"Comment\",\"relationName\":\"CommentToPost\"},{\"name\":\"likes\",\"kind\":\"object\",\"type\":\"PostLike\",\"relationName\":\"PostToPostLike\"}],\"dbName\":null},\"Category\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"name\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"posts\",\"kind\":\"object\",\"type\":\"PostCategory\",\"relationName\":\"CategoryToPostCategory\"}],\"dbName\":null},\"PostCategory\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"postId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"categoryId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"category\",\"kind\":\"object\",\"type\":\"Category\",\"relationName\":\"CategoryToPostCategory\"},{\"name\":\"post\",\"kind\":\"object\",\"type\":\"Post\",\"relationName\":\"PostToPostCategory\"}],\"dbName\":null},\"Comment\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"content\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"postId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"post\",\"kind\":\"object\",\"type\":\"Post\",\"relationName\":\"CommentToPost\"},{\"name\":\"likes\",\"kind\":\"object\",\"type\":\"CommentLike\",\"relationName\":\"CommentToCommentLike\"}],\"dbName\":null},\"PostLike\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"visitorId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"postId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"post\",\"kind\":\"object\",\"type\":\"Post\",\"relationName\":\"PostToPostLike\"}],\"dbName\":null},\"CommentLike\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"visitorId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"commentId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"comment\",\"kind\":\"object\",\"type\":\"Comment\",\"relationName\":\"CommentToCommentLike\"}],\"dbName\":null}},\"enums\":{},\"types\":{}}")
 
 async function decodeBase64AsWasm(wasmBase64: string): Promise<WebAssembly.Module> {
   const { Buffer } = await import('node:buffer')
@@ -203,6 +203,36 @@ export interface PrismaClient<
     * ```
     */
   get postCategory(): Prisma.PostCategoryDelegate<ExtArgs, { omit: OmitOpts }>;
+
+  /**
+   * `prisma.comment`: Exposes CRUD operations for the **Comment** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more Comments
+    * const comments = await prisma.comment.findMany()
+    * ```
+    */
+  get comment(): Prisma.CommentDelegate<ExtArgs, { omit: OmitOpts }>;
+
+  /**
+   * `prisma.postLike`: Exposes CRUD operations for the **PostLike** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more PostLikes
+    * const postLikes = await prisma.postLike.findMany()
+    * ```
+    */
+  get postLike(): Prisma.PostLikeDelegate<ExtArgs, { omit: OmitOpts }>;
+
+  /**
+   * `prisma.commentLike`: Exposes CRUD operations for the **CommentLike** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more CommentLikes
+    * const commentLikes = await prisma.commentLike.findMany()
+    * ```
+    */
+  get commentLike(): Prisma.CommentLikeDelegate<ExtArgs, { omit: OmitOpts }>;
 }
 
 export function getPrismaClientClass(): PrismaClientConstructor {

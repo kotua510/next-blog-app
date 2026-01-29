@@ -23,6 +23,8 @@ model Post {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   categories     PostCategory[]
+  comments       Comment[]
+  likes          PostLike[]
 }
 
 // カテゴリテーブル
@@ -43,4 +45,35 @@ model PostCategory {
   updatedAt   DateTime @updatedAt
   category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   post        Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+}
+
+// コメント
+model Comment {
+  id        String   @id @default(uuid())
+  content   String
+  createdAt DateTime @default(now())
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  likes     CommentLike[]
+}
+
+//記事いいね
+model PostLike {
+  id        String   @id @default(uuid())
+  visitorId String
+  createdAt DateTime @default(now())
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  @@unique([postId, visitorId]) // 同じ人の連打防止
+}
+
+
+//コメントいいね
+model CommentLike {
+  id        String   @id @default(uuid())
+  visitorId String
+  createdAt DateTime @default(now())
+  commentId String
+  comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  @@unique([commentId, visitorId])
 }

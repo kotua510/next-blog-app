@@ -11,4 +11,7 @@
 export type * from './models/Post'
 export type * from './models/Category'
 export type * from './models/PostCategory'
+export type * from './models/Comment'
+export type * from './models/PostLike'
+export type * from './models/CommentLike'
 export type * from './commonInputTypes'
