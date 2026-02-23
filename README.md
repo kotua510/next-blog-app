@@ -269,7 +269,7 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 - ログインページのメールアドレス形式誘導機能<br>
 メールアドレスを入力するときにメールアドレスの形式に沿っていなかった場合知らせます。この機能によってメールアドレスの入力ミスを軽減することができます。<br>
-<img src="README_image/n機能27.png" alt="説明" width="500"><br>
+<img src="README_image/n機能28.png" alt="説明" width="500"><br>
 
 - ログイン機能<br>
 ログインすることで記事やカテゴリの編集や削除、作成などログイン限定機能の実行が可能となります。<br>
