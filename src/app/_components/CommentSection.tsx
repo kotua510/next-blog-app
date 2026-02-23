@@ -20,19 +20,33 @@ export default function CommentSection({
   const [text, setText] = useState("");
 
   const handleSubmit = async () => {
-    if (!text.trim()) return;
+  if (!text.trim()) return;
 
+  try {
     const res = await fetch(`/api/posts/${postId}/comments`, {
       method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({ content: text }),
     });
 
-    if (!res.ok) return;
+    const data = await res.json();
 
-    const newComment = await res.json();
-    setComments([newComment, ...comments]);
+    // 🔥 エラー表示（NGワード含む）
+    if (!res.ok) {
+      alert(data.message || "コメント投稿に失敗しました");
+      return;
+    }
+
+    setComments([data, ...comments]);
     setText("");
-  };
+  } catch (err) {
+    console.error(err);
+    alert("通信エラー");
+  }
+};
+
 
   return (
     <div className="mt-8 space-y-4">

@@ -1,45 +1,63 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse, NextRequest } from "next/server";
 import { Post } from "@/generated/prisma/client";
+import { getVisitorId } from "@/lib/visitor";
 
 export const revalidate = 0; // ◀ サーバサイドのキャッシュを無効化する設定
 export const dynamic = "force-dynamic"; // ◀ 〃
 
 export const GET = async (
   req: NextRequest,
-  { params }: {params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) => {
   try {
-     const { id: postId } = await params;
+    const { id: postId } = await params;
+    const visitorId = await getVisitorId(); // 🔥 ユーザー識別
 
-    if (Number.isNaN(postId)) {
-      return NextResponse.json(
-        { error: "不正なIDです" },
-        { status: 400 }
-      );
+    /* ---------------------------
+       🔥 初回閲覧だけ記録
+    ----------------------------*/
+    try {
+      await prisma.postView.create({
+        data: {
+          postId,
+          visitorId,
+        },
+      });
+
+      // 作れた＝初回閲覧 → カウント増やす
+      await prisma.post.update({
+        where: { id: postId },
+        data: {
+          viewCount: { increment: 1 },
+        },
+      });
+    } catch {
+      // 既に閲覧済み → 何もしない
     }
 
+    /* ---------------------------
+       記事取得
+    ----------------------------*/
     const post = await prisma.post.findUnique({
-      where: { id: postId }, // ← 必須
+      where: { id: postId },
       select: {
         id: true,
         title: true,
         content: true,
         coverImageKey: true,
         createdAt: true,
+        resultUrl: true,
+        viewCount: true,
         categories: {
           select: {
             category: {
-              select: {
-                id: true,
-                name: true,
-              },
+              select: { id: true, name: true },
             },
           },
         },
       },
     });
-
 
     if (!post) {
       return NextResponse.json(
@@ -48,15 +66,11 @@ export const GET = async (
       );
     }
 
-    const formattedPost = {
-  id: post.id,
-  title: post.title,
-  content: post.content,
-  coverImageKey: post.coverImageKey, // ← これだけ返す
-  categories: post.categories.map((pc) => pc.category),
-};
+    return NextResponse.json({
+      ...post,
+      categories: post.categories.map((pc) => pc.category),
+    });
 
-return NextResponse.json(formattedPost);
   } catch (error) {
     console.error(error);
     return NextResponse.json(

@@ -2,8 +2,8 @@ import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/utils/supabase";
 
-export const revalidate = 0; // ◀ サーバサイドのキャッシュを無効化する設定
-export const dynamic = "force-dynamic"; // ◀ 〃
+export const revalidate = 0;
+export const dynamic = "force-dynamic";
 
 /* ---------------- 認証共通処理 ---------------- */
 const authenticate = async (req: NextRequest) => {
@@ -31,6 +31,8 @@ export async function GET(
       title: true,
       content: true,
       coverImageKey: true,
+      summary: true,
+      resultUrl: true,
       categories: {
         select: {
           category: {
@@ -53,6 +55,8 @@ export async function GET(
     title: post.title,
     content: post.content,
     coverImageKey: post.coverImageKey,
+    summary: post.summary,
+    resultUrl: post.resultUrl,
     categories: post.categories.map((c) => c.category),
   });
 }
@@ -68,37 +72,58 @@ export async function PUT(
   }
 
   const { id } = await context.params;
-  const { title, content, coverImageKey, categoryIds } = await req.json();
+  const { title, content, coverImageKey, categoryIds, resultUrl, summary } =
+    await req.json();
 
+  // 更新対象データ
   const updateData: {
     title: string;
     content: string;
     coverImageKey?: string | null;
+    summary?: string | null;
+    resultUrl?: string | null;
   } = {
     title,
     content,
   };
 
+  // coverImageKey の更新
   if (coverImageKey !== undefined) {
     updateData.coverImageKey = coverImageKey;
   }
 
+  // resultUrl の更新
+  if (resultUrl !== undefined) {
+    updateData.resultUrl = resultUrl && resultUrl.trim() !== "" ? resultUrl : null;
+  }
+
+  // summary の更新
+  if (summary !== undefined) {
+    updateData.summary = summary && summary.trim() !== "" ? summary : null;
+  }
+
+  // トランザクションで更新
   await prisma.$transaction(async (tx) => {
+    // 投稿更新
     await tx.post.update({
       where: { id },
       data: updateData,
     });
 
+    // 既存のカテゴリを削除
     await tx.postCategory.deleteMany({
       where: { postId: id },
     });
 
-    await tx.postCategory.createMany({
-      data: categoryIds.map((cid: string) => ({
-        postId: id,
-        categoryId: cid,
-      })),
-    });
+    // 新しいカテゴリを作成
+    if (categoryIds && categoryIds.length > 0) {
+      await tx.postCategory.createMany({
+        data: categoryIds.map((cid: string) => ({
+          postId: id,
+          categoryId: cid,
+        })),
+      });
+    }
   });
 
   return NextResponse.json({ message: "更新しました" });

@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faEnvelope, faKey } from "@fortawesome/free-solid-svg-icons";
+import { faEnvelope, faKey, faUserSecret } from "@fortawesome/free-solid-svg-icons";
 import { twMerge } from "tailwind-merge";
 import ValidationAlert from "../_components/ValidationAlert";
 import { supabase } from "@/utils/supabase";
@@ -25,30 +25,49 @@ const Page: React.FC = () => {
     setEmailError("");
   };
 
-  // フォームのログインボタンが押下されたときの処理
+  // 🔐 通常ログイン
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
     setLoginError("");
 
     try {
-      console.log("ログイン処理を実行します。");
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
+
       if (error) {
         setLoginError(
           `ログインIDまたはパスワードが違います（${error.code}）。`
         );
-        console.error(JSON.stringify(error, null, 2));
         return;
       }
-      console.log("ログイン処理に成功しました。");
+
       router.replace("/admin");
-    } catch (error) {
+    } catch {
       setLoginError("ログイン処理中に予期せぬエラーが発生しました。");
-      console.error(JSON.stringify(error, null, 2));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // 👤 ゲストログイン
+  const handleGuestLogin = async () => {
+    setIsSubmitting(true);
+    setLoginError("");
+
+    try {
+      const { error } = await supabase.auth.signInAnonymously();
+
+      if (error) {
+        setLoginError("ゲストログインに失敗しました。");
+        return;
+      }
+
+      router.replace("/admin");
+    } catch {
+      setLoginError("ゲストログイン中にエラーが発生しました。");
     } finally {
       setIsSubmitting(false);
     }
@@ -58,6 +77,8 @@ const Page: React.FC = () => {
     <main>
       <div className="mb-2 text-2xl font-bold">ログイン</div>
       <ValidationAlert msg={loginError} />
+
+      {/* 通常ログインフォーム */}
       <form
         onSubmit={handleSubmit}
         className={twMerge("mb-4 space-y-4", isSubmitting && "opacity-50")}
@@ -69,8 +90,6 @@ const Page: React.FC = () => {
           </label>
           <input
             type="text"
-            id="email"
-            name="email"
             className="w-full rounded-md border-2 px-2 py-1"
             placeholder="hoge@example.com"
             value={email}
@@ -87,8 +106,6 @@ const Page: React.FC = () => {
           </label>
           <input
             type="password"
-            id="password"
-            name="password"
             className="w-full rounded-md border-2 px-2 py-1"
             placeholder="Password"
             value={password}
@@ -116,6 +133,18 @@ const Page: React.FC = () => {
           </button>
         </div>
       </form>
+
+      {/* 👤 ゲストログインボタン */}
+      <div className="text-center">
+        <button
+          onClick={handleGuestLogin}
+          disabled={isSubmitting}
+          className="rounded-md px-5 py-1 font-bold bg-gray-500 text-white hover:bg-gray-600 disabled:opacity-50"
+        >
+          <FontAwesomeIcon icon={faUserSecret} className="mr-2" />
+          ゲストログイン
+        </button>
+      </div>
     </main>
   );
 };

@@ -9,6 +9,7 @@ import {
 import { twMerge } from "tailwind-merge";
 import { Category } from "@/app/_types/Category";
 import Link from "next/link";
+import { supabase } from "@/utils/supabase";
 
 // ===== APIレスポンス型 =====
 type CategoryApiResponse = {
@@ -29,18 +30,15 @@ const Page: React.FC = () => {
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newCategoryNameError, setNewCategoryNameError] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-    const [sortKey, setSortKey] = useState<SortKey>("new");
+  const [sortKey, setSortKey] = useState<SortKey>("new");
 
   const [currentCategoryName, setCurrentCategoryName] = useState<
     string | undefined
   >(undefined);
 
-  // 動的ルートパラメータ
   const { id } = useParams() as { id: string };
-
   const router = useRouter();
 
-  // カテゴリ一覧
   const [categories, setCategories] = useState<Category[] | null>(null);
 
   // ===== カテゴリ一覧取得 =====
@@ -81,7 +79,6 @@ const Page: React.FC = () => {
     }
   };
 
-  // 初回ロード
   useEffect(() => {
     fetchCategories();
   }, []);
@@ -110,9 +107,33 @@ const Page: React.FC = () => {
     setNewCategoryName(e.target.value);
   };
 
-  // ===== 名前変更 =====
+  // =============================
+  // 🔧 名前変更（Bearer付き）
+  // =============================
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (user?.is_anonymous) {
+      alert("ゲストユーザーはカテゴリ名を変更できません");
+      return;
+    }
+
+    // ⭐ トークン取得
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    const accessToken = session?.access_token;
+
+    if (!accessToken) {
+      alert("ログイン情報が取得できません");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -121,6 +142,7 @@ const Page: React.FC = () => {
         cache: "no-store",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`, // ⭐ 追加
         },
         body: JSON.stringify({ name: newCategoryName }),
       });
@@ -128,6 +150,8 @@ const Page: React.FC = () => {
       if (!res.ok) {
         throw new Error(`${res.status}: ${res.statusText}`);
       }
+
+      alert("カテゴリ名を変更しました");
 
       setNewCategoryName("");
       await fetchCategories();
@@ -143,8 +167,19 @@ const Page: React.FC = () => {
     }
   };
 
-  // ===== 削除 =====
+  // =============================
+  // 🔧 削除（Bearer付き）
+  // =============================
   const handleDelete = async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (user?.is_anonymous) {
+      alert("ゲストユーザーはカテゴリを削除できません");
+      return;
+    }
+
     if (
       !window.confirm(
         `カテゴリ「${currentCategoryName}」を本当に削除しますか？`
@@ -153,16 +188,34 @@ const Page: React.FC = () => {
       return;
     }
 
+    // ⭐ トークン取得
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    const accessToken = session?.access_token;
+
+    if (!accessToken) {
+      alert("ログイン情報が取得できません");
+      return;
+    }
+
     setIsSubmitting(true);
+
     try {
       const res = await fetch(`/api/admin/categories/${id}`, {
         method: "DELETE",
         cache: "no-store",
+        headers: {
+          Authorization: `Bearer ${accessToken}`, // ⭐ 追加
+        },
       });
 
       if (!res.ok) {
         throw new Error(`${res.status}: ${res.statusText}`);
       }
+
+      alert("カテゴリを削除しました");
 
       router.replace("/admin/categories");
     } catch (error) {
@@ -177,38 +230,38 @@ const Page: React.FC = () => {
   };
 
   // ===== 検索 =====
-    const filteredCategories = useMemo(() => {
-      if (!categories) return [];
-      return categories.filter((cat) =>
-        cat.name.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }, [categories, searchTerm]);
-  
-    // ===== ソート =====
-    const sortedCategories = useMemo(() => {
-      const copy = [...filteredCategories];
-  
-      switch (sortKey) {
-        case "new":
-          return copy.sort(
-            (a, b) =>
-              new Date(b.createdAt).getTime() -
-              new Date(a.createdAt).getTime()
-          );
-        case "old":
-          return copy.sort(
-            (a, b) =>
-              new Date(a.createdAt).getTime() -
-              new Date(b.createdAt).getTime()
-          );
-        case "name":
-          return copy.sort((a, b) =>
-            a.name.localeCompare(b.name, "ja")
-          );
-        default:
-          return copy;
-      }
-    }, [filteredCategories, sortKey]);
+  const filteredCategories = useMemo(() => {
+    if (!categories) return [];
+    return categories.filter((cat) =>
+      cat.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [categories, searchTerm]);
+
+  // ===== ソート =====
+  const sortedCategories = useMemo(() => {
+    const copy = [...filteredCategories];
+
+    switch (sortKey) {
+      case "new":
+        return copy.sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() -
+            new Date(a.createdAt).getTime()
+        );
+      case "old":
+        return copy.sort(
+          (a, b) =>
+            new Date(a.createdAt).getTime() -
+            new Date(b.createdAt).getTime()
+        );
+      case "name":
+        return copy.sort((a, b) =>
+          a.name.localeCompare(b.name, "ja")
+        );
+      default:
+        return copy;
+    }
+  }, [filteredCategories, sortKey]);
 
   // ===== 状態別表示 =====
   if (isLoading) {
@@ -234,109 +287,151 @@ const Page: React.FC = () => {
 
   // ===== 表示 =====
   return (
-    <main>
-      <div className="mb-4 text-2xl font-bold">カテゴリの編集・削除</div>
-
-      <form
-        onSubmit={handleSubmit}
-        className={twMerge("mb-4 space-y-4", isSubmitting && "opacity-50")}
+  <main className="space-y-6 px-4 sm:px-0 max-w-3xl mx-auto">
+    {/* ===== スマホ：リンク最上部 ===== */}
+    <div className="flex flex-col gap-2 sm:hidden">
+      <Link
+        href="/admin"
+        className="px-3 py-2 bg-gray-200 rounded text-center"
       >
-        <div className="space-y-6">
-          <div>
-            <div className="font-bold">現在のカテゴリ名</div>
-            <div className="text-gray-500">{currentCategoryName}</div>
-          </div>
+        管理機能一覧
+      </Link>
+      <Link
+        href="/admin/categories/new"
+        className="px-3 py-2 bg-gray-200 rounded text-center"
+      >
+        カテゴリ新規作成
+      </Link>
+    </div>
 
-          <div className="space-y-1">
-            <label htmlFor="name" className="block font-bold">
-              新しいカテゴリ名
-            </label>
-            <input
-              id="name"
-              className="w-full rounded-md border-2 px-2 py-1"
-              value={newCategoryName}
-              onChange={updateNewCategoryName}
-              autoComplete="off"
-              required
-            />
-            {newCategoryNameError && (
-              <div className="flex items-center text-sm font-bold text-red-500">
-                <FontAwesomeIcon
-                  icon={faTriangleExclamation}
-                  className="mr-1"
-                />
-                {newCategoryNameError}
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="flex justify-end space-x-2">
-          <button
-            type="submit"
-            disabled={
-              isSubmitting ||
-              newCategoryNameError !== "" ||
-              newCategoryName === ""
-            }
-            className="rounded-md bg-indigo-500 px-5 py-1 font-bold text-white hover:bg-indigo-600 disabled:opacity-50"
-          >
-            名前を変更
-          </button>
-
-          <button
-            type="button"
-            onClick={handleDelete}
-            className="rounded-md bg-red-500 px-5 py-1 font-bold text-white hover:bg-red-600"
-          >
-            削除
-          </button>
-        </div>
-      </form>
-
-      <div className="mb-2 text-2xl font-bold">既存カテゴリ一覧</div>
-      
-      {/* 検索・ソートUI */}
-      <div className="mb-3 flex flex-wrap gap-2">
-        <input
-          type="text"
-          placeholder="カテゴリ名で検索"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="rounded-md border px-2 py-1"
-        />
-
-        <select
-          value={sortKey}
-          onChange={(e) => setSortKey(e.target.value as SortKey)}
-          className="rounded-md border px-2 py-1"
-        >
-          <option value="new">新しい順</option>
-          <option value="old">古い順</option>
-          <option value="name">名前順</option>
-        </select>
+    {/* ===== ヘッダー ===== */}
+    <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mb-4 text-3xl font-bold">
+        カテゴリの編集・削除
       </div>
 
-      {sortedCategories.length === 0 ? (
-        <div className="text-gray-500">
-          （条件に一致するカテゴリはありません）
+      {/* PCのみ */}
+      <div className="hidden sm:flex gap-2">
+        <Link
+          href="/admin"
+          className="px-3 py-2 bg-gray-200 rounded"
+        >
+          管理機能一覧
+        </Link>
+        <Link
+          href="/admin/categories/new"
+          className="px-3 py-2 bg-gray-200 rounded"
+        >
+          カテゴリ新規作成
+        </Link>
+      </div>
+    </header>
+
+    <form
+      onSubmit={handleSubmit}
+      className={twMerge("mb-4 space-y-4", isSubmitting && "opacity-50")}
+    >
+      <div className="space-y-6">
+        <div>
+          <div className="font-bold text-2xl">現在のカテゴリ名</div>
+          <div className="text-gray-500 text-xl break-words">
+            {currentCategoryName}
+          </div>
         </div>
-      ) : (
-        <div className="flex flex-wrap gap-2">
-          {sortedCategories.map((category) => (
-            <div
-              key={category.id}
-              className="rounded-md border border-slate-400 px-2 py-0.5 text-slate-500"
-            >
-              <Link href={`/admin/categories/${category.id}`}>
-                {category.name}
-              </Link>
+
+        <div className="space-y-1">
+          <label htmlFor="name" className="block font-bold text-2xl">
+            新しいカテゴリ名
+          </label>
+          <input
+            id="name"
+            className="w-full rounded-md border-2 px-2 py-1"
+            value={newCategoryName}
+            onChange={updateNewCategoryName}
+            autoComplete="off"
+            required
+          />
+          {newCategoryNameError && (
+            <div className="flex items-center text-sm font-bold text-red-500">
+              <FontAwesomeIcon
+                icon={faTriangleExclamation}
+                className="mr-1"
+              />
+              {newCategoryNameError}
             </div>
-          ))}
+          )}
         </div>
-      )}
-    </main>
-  );
+      </div>
+
+      {/* ===== ボタン ===== */}
+      <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
+        <button
+          type="submit"
+          disabled={
+            isSubmitting ||
+            newCategoryNameError !== "" ||
+            newCategoryName === ""
+          }
+          className="rounded-md bg-indigo-500 px-5 py-2 font-bold text-white hover:bg-indigo-600 disabled:opacity-50 w-full sm:w-auto"
+        >
+          名前を変更✏️
+        </button>
+
+        <button
+          type="button"
+          onClick={handleDelete}
+          className="rounded-md bg-red-500 px-5 py-2 font-bold text-white hover:bg-red-600 w-full sm:w-auto"
+        >
+          削除🗑️
+        </button>
+      </div>
+    </form>
+
+    <div className="mb-2 text-2xl font-bold">
+      既存カテゴリ一覧📜
+    </div>
+
+    {/* ===== 検索・ソート ===== */}
+    <div className="mb-3 flex flex-col sm:flex-row sm:flex-wrap gap-2">
+      <input
+        type="text"
+        placeholder="カテゴリ名で検索"
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        className="rounded-md border px-2 py-1 w-full sm:w-auto"
+      />
+
+      <select
+        value={sortKey}
+        onChange={(e) => setSortKey(e.target.value as SortKey)}
+        className="rounded-md border px-2 py-1 w-full sm:w-auto"
+      >
+        <option value="new">≡新しい順</option>
+        <option value="old">≡古い順</option>
+        <option value="name">≡名前順</option>
+      </select>
+    </div>
+
+    {sortedCategories.length === 0 ? (
+      <div className="text-gray-500">
+        （条件に一致するカテゴリはありません）
+      </div>
+    ) : (
+      <div className="flex flex-wrap gap-2">
+        {sortedCategories.map((category) => (
+          <div
+            key={category.id}
+            className="rounded-md border border-slate-400 px-2 py-0.5 text-slate-500"
+          >
+            <Link href={`/admin/categories/${category.id}`}>
+              {category.name}
+            </Link>
+          </div>
+        ))}
+      </div>
+    )}
+  </main>
+);
 };
 
 export default Page;

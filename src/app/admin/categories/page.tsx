@@ -2,14 +2,13 @@
 
 import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
+import { supabase } from "@/utils/supabase";
 
 type AdminCategory = {
   id: string;
   name: string;
   createdAt: string;
 };
-
-type ViewMode = "list" | "grid";
 
 type SortKey = "new" | "old" | "name";
 
@@ -22,10 +21,10 @@ const AdminCategoriesPage = () => {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [sortKey, setSortKey] = useState<SortKey>("new");
+  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
 
-  // カテゴリ取得
+  // ===== カテゴリ取得 =====
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -40,9 +39,7 @@ const AdminCategoriesPage = () => {
         const data: AdminCategory[] = await res.json();
         setCategories(data);
       } catch (e) {
-        setError(
-          e instanceof Error ? e.message : "不明なエラーが発生しました"
-        );
+        setError(e instanceof Error ? e.message : "不明なエラー");
       } finally {
         setLoading(false);
       }
@@ -51,131 +48,153 @@ const AdminCategoriesPage = () => {
     fetchCategories();
   }, []);
 
+  // ===== 削除（Postsと同じ方式）=====
+  const handleDelete = async (categoryId: string, name: string) => {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (!session) {
+    alert("ログインしてください");
+    return;
+  }
+
+  if (!window.confirm(`「${name}」を削除しますか？`)) return;
+
+  const res = await fetch(`/api/admin/categories/${categoryId}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${session.access_token}`, // ★最重要
+    },
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    console.error(text);
+    alert("削除に失敗しました");
+    return;
+  }
+
+  setCategories((prev) =>
+    prev.filter((c) => c.id !== categoryId)
+  );
+};
+
+  // ===== 検索 =====
   const filteredCategories = useMemo(() => {
+    const keyword = searchTerm.toLowerCase();
+
+    if (keyword === "") return categories;
+
     return categories.filter((cat) =>
-      cat.name.toLowerCase().includes(searchTerm.toLowerCase())
+      cat.name.toLowerCase().includes(keyword)
     );
   }, [categories, searchTerm]);
 
-
   // ===== 並び替え =====
   const sortedCategories = useMemo(() => {
-  const copy = [...filteredCategories];
+    const copy = [...filteredCategories];
 
-  switch (sortKey) {
-    case "new":
-      return copy.sort(
-        (a, b) =>
-          new Date(b.createdAt).getTime() -
-          new Date(a.createdAt).getTime()
-      );
-    case "old":
-      return copy.sort(
-        (a, b) =>
-          new Date(a.createdAt).getTime() -
-          new Date(b.createdAt).getTime()
-      );
-    case "name":
-      return copy.sort((a, b) =>
-        a.name.localeCompare(b.name, "ja")
-      );
-    default:
-      return copy;
-  }
-}, [filteredCategories, sortKey]);
-
-  // 削除処理
-  const handleDelete = async (categoryId: string, categoryName: string) => {
-    if (!window.confirm(`カテゴリ「${categoryName}」を本当に削除しますか？`)) {
-      return;
+    switch (sortKey) {
+      case "new":
+        return copy.sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() -
+            new Date(a.createdAt).getTime()
+        );
+      case "old":
+        return copy.sort(
+          (a, b) =>
+            new Date(a.createdAt).getTime() -
+            new Date(b.createdAt).getTime()
+        );
+      case "name":
+        return copy.sort((a, b) =>
+          a.name.localeCompare(b.name, "ja")
+        );
+      default:
+        return copy;
     }
+  }, [filteredCategories, sortKey]);
 
-    try {
-      const res = await fetch(`/api/admin/categories/${categoryId}`, {
-        method: "DELETE",
-        cache: "no-store",
-      });
-
-      if (!res.ok) {
-        throw new Error(`${res.status}: ${res.statusText}`);
-      }
-
-      setCategories((prev) =>
-        prev.filter((cat) => cat.id !== categoryId)
-      );
-    } catch (error) {
-      const errorMsg =
-        error instanceof Error
-          ? `カテゴリの削除に失敗しました\n${error.message}`
-          : `予期せぬエラーが発生しました\n${error}`;
-
-      console.error(errorMsg);
-      window.alert(errorMsg);
-    }
-  };
-
-
-  // ページネーション
-  const totalPages = Math.ceil(
-    filteredCategories.length / ITEMS_PER_PAGE
-  );
+  // ===== ページネーション =====
+  const totalPages = Math.ceil(sortedCategories.length / ITEMS_PER_PAGE);
 
   const paginatedCategories = useMemo(() => {
-  const start = (currentPage - 1) * ITEMS_PER_PAGE;
-  return sortedCategories.slice(start, start + ITEMS_PER_PAGE);
-}, [sortedCategories, currentPage]);
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return sortedCategories.slice(start, start + ITEMS_PER_PAGE);
+  }, [sortedCategories, currentPage]);
 
-
-  // 検索時は1ページ目に戻す
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm]);
+  }, [searchTerm, sortKey]);
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div className="text-red-600">{error}</div>;
 
   return (
-    <main className="space-y-6">
-      <header className="flex gap-2">
+  <main className="space-y-6 px-4  mx-auto overflow-x-hidden">
+    {/* ===== スマホ：リンク最上部 ===== */}
+    <div className="flex flex-col gap-2 sm:hidden">
+      <Link
+        href="/admin"
+        className="px-3 py-2 bg-gray-200 rounded text-center w-full"
+      >
+        管理機能一覧
+      </Link>
+      <Link
+        href="/admin/categories/new"
+        className="px-3 py-2 bg-gray-200 rounded text-center w-full"
+      >
+        カテゴリ新規作成
+      </Link>
+    </div>
+
+    {/* ===== ヘッダー ===== */}
+    <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between min-w-0">
+      <h1 className="text-2xl font-bold break-words">カテゴリ管理</h1>
+
+      {/* PCのみ */}
+      <div className="hidden sm:flex gap-2 flex-wrap">
+        <Link
+          href="/admin"
+          className="px-3 py-2 bg-gray-200 rounded"
+        >
+          管理機能一覧
+        </Link>
         <Link
           href="/admin/categories/new"
-          className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300"
+          className="px-3 py-2 bg-gray-200 rounded"
         >
           カテゴリ新規作成
         </Link>
+      </div>
+    </header>
 
-        <Link
-          href="/admin"
-          className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300"
-        >
-          管理画面トップ
-        </Link>
-      </header>
+    {/* ===== 検索・ソート・表示切替 ===== */}
+    <div className="flex flex-wrap gap-2 items-center min-w-0">
+      <input
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        placeholder="カテゴリ名で検索🔍"
+        className="border px-3 py-2 rounded w-full sm:w-auto sm:max-w-sm min-w-0"
+      />
 
-      <h1 className="text-2xl font-bold">カテゴリ管理</h1>
+      <select
+        value={sortKey}
+        onChange={(e) => setSortKey(e.target.value as SortKey)}
+        className="border px-2 py-2 rounded shrink-0"
+      >
+        <option value="new">≡新しい順</option>
+        <option value="old">≡古い順</option>
+        <option value="name">≡名前順</option>
+      </select>
 
-      <div className="flex items-center gap-2 flex-wrap">
-        <input
-          type="text"
-          placeholder="カテゴリ名で検索"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full max-w-sm border px-3 py-2 rounded"
-        />
-        <select
-  value={sortKey}
-  onChange={(e) => setSortKey(e.target.value as SortKey)}
-  className="border px-3 py-2 rounded"
->
-  <option value="new">新しい順</option>
-  <option value="old">古い順</option>
-  <option value="name">名前順</option>
-</select>
-
-        <div className="hidden sm:flex gap-2">
+      {/* PCのみ：カラム切替 */}
+      <div className="hidden sm:flex gap-2 ml-auto flex-wrap">
         <button
           onClick={() => setViewMode("list")}
-          className={`px-3 py-2 border rounded ${
+          className={`px-3 py-2 border rounded whitespace-nowrap ${
             viewMode === "list" ? "bg-blue-600 text-white" : ""
           }`}
         >
@@ -184,78 +203,76 @@ const AdminCategoriesPage = () => {
 
         <button
           onClick={() => setViewMode("grid")}
-          className={`px-3 py-2 border rounded ${
+          className={`px-3 py-2 border rounded whitespace-nowrap ${
             viewMode === "grid" ? "bg-blue-600 text-white" : ""
           }`}
         >
           縦2列
-          </button>
-          </div>
+        </button>
       </div>
+    </div>
 
-      <ul
-        className={
-          viewMode === "grid"
-            ? "grid grid-cols-1 sm:grid-cols-2 gap-4"
-            : "space-y-2"
-        }
-      >
-        {paginatedCategories.map((cat) => (
-          <li
-            key={cat.id}
-            className={`border rounded flex items-center justify-between ${
-              viewMode === "list" ? "p-3" : "p-2"
-            }`}
-          >
-            <span
-              className={`font-medium ${
-                viewMode === "grid" ? "leading-tight" : ""
+    {/* ===== 一覧 ===== */}
+    <ul
+      className={
+        viewMode === "grid"
+          ? "grid grid-cols-1 sm:grid-cols-2 gap-4"
+          : "space-y-2"
+      }
+    >
+      {paginatedCategories.map((cat) => (
+        <li
+          key={cat.id}
+          className={`border rounded flex items-center justify-between gap-2 min-w-0 ${
+            viewMode === "list" ? "p-3" : "p-2"
+          }`}
+        >
+          <span className="font-medium break-words min-w-0">
+            {cat.name}
+          </span>
+
+          <div className="flex gap-2 shrink-0 flex-wrap">
+            <Link
+              href={`/admin/categories/${cat.id}`}
+              className="px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 whitespace-nowrap"
+            >
+              編集✏️
+            </Link>
+
+            <button
+              onClick={() => handleDelete(cat.id, cat.name)}
+              className="px-3 py-1 rounded bg-red-600 text-white hover:bg-red-700 whitespace-nowrap"
+            >
+              削除🗑️
+            </button>
+          </div>
+        </li>
+      ))}
+    </ul>
+
+    {/* ===== ページネーション ===== */}
+    {totalPages > 1 && (
+      <div className="flex gap-2 flex-wrap">
+        {Array.from({ length: totalPages }).map((_, i) => {
+          const page = i + 1;
+          return (
+            <button
+              key={page}
+              onClick={() => setCurrentPage(page)}
+              className={`px-3 py-1 border rounded ${
+                page === currentPage
+                  ? "bg-blue-600 text-white"
+                  : "bg-white"
               }`}
             >
-              {cat.name}
-            </span>
-
-            <div className="flex gap-2 shrink-0">
-              <Link
-                href={`/admin/categories/${cat.id}`}
-                className="px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700"
-              >
-                編集
-              </Link>
-
-              <button
-                onClick={() => handleDelete(cat.id, cat.name)}
-                className="px-3 py-1 rounded bg-red-600 text-white hover:bg-red-700"
-              >
-                削除
-              </button>
-            </div>
-          </li>
-        ))}
-      </ul>
-
-      {totalPages > 1 && (
-        <div className="flex gap-2 flex-wrap">
-          {Array.from({ length: totalPages }).map((_, i) => {
-            const page = i + 1;
-            return (
-              <button
-                key={page}
-                onClick={() => setCurrentPage(page)}
-                className={`px-3 py-1 rounded border ${
-                  page === currentPage
-                    ? "bg-blue-600 text-white"
-                    : "bg-white"
-                }`}
-              >
-                {page}
-              </button>
-            );
-          })}
-        </div>
-      )}
-    </main>
-  );
+              {page}
+            </button>
+          );
+        })}
+      </div>
+    )}
+  </main>
+);
 };
 
 export default AdminCategoriesPage;

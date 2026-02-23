@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpinner } from "@fortawesome/free-solid-svg-icons";
@@ -8,6 +8,7 @@ import { twMerge } from "tailwind-merge";
 import { useAuth } from "@/app/_hooks/useAuth";
 import { supabase } from "@/utils/supabase";
 import CryptoJS from "crypto-js";
+
 
 /* ==========================
    型定義
@@ -43,10 +44,13 @@ const Page: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [fetchErrorMsg, setFetchErrorMsg] = useState<string | null>(null);
+  const [summary, setSummary] = useState("");
 
   const [newTitle, setNewTitle] = useState("");
   const [newContent, setNewContent] = useState("");
   const [coverImageKey, setCoverImageKey] = useState<string | undefined>();
+  const [resultUrl, setResultUrl] = useState("");
+
 
   // ★ 画像プレビュー用
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
@@ -56,6 +60,8 @@ const Page: React.FC = () => {
   >(null);
 
   const [categoryCols, setCategoryCols] = useState<2 | 3>(2);
+
+  const [categorySearch, setCategorySearch] = useState("");
 
   /* ==========================
      認証チェック
@@ -142,7 +148,20 @@ const Page: React.FC = () => {
      ========================== */
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    
+    if (session?.user?.is_anonymous) {
+  alert("ゲストユーザーは投稿できません");
+  return;
+}
+
+
     if (!token) return;
+
+    if (resultUrl && !resultUrl.startsWith("http")) {
+  alert("URLはhttp(s)から始めてください");
+  return;
+}
+
 
     setIsSubmitting(true);
 
@@ -150,6 +169,8 @@ const Page: React.FC = () => {
       const requestBody = {
         title: newTitle,
         content: newContent,
+        resultUrl: resultUrl || undefined,
+        summary: summary || undefined, // ← 追加
         coverImageKey,
         categoryIds: checkableCategories
           ? checkableCategories.filter((c) => c.isSelect).map((c) => c.id)
@@ -182,6 +203,14 @@ const Page: React.FC = () => {
       setIsSubmitting(false);
     }
   };
+
+  const filteredCategories = useMemo(() => {
+  if (!checkableCategories) return [];
+
+  return checkableCategories.filter((cat) =>
+    cat.name.toLowerCase().includes(categorySearch.toLowerCase())
+  );
+}, [checkableCategories, categorySearch]);
 
   /* ==========================
      プレビューURL解放
@@ -223,158 +252,231 @@ const Page: React.FC = () => {
      JSX
      ========================== */
   return (
-    <main className="space-y-4">
-      <div className="flex items-center">
-        <h1 className="text-2xl font-bold">投稿記事の新規作成</h1>
+  <main className="space-y-4 px-4 sm:px-0">
+    {/* ===== スマホ：リンクボタン最上部 ===== */}
+    <div className="flex flex-col gap-2 sm:hidden">
+      <button
+        onClick={() => router.push("/admin")}
+        className="rounded bg-gray-200 px-4 py-2 hover:bg-gray-300 text-center"
+      >
+        管理機能一覧へ
+      </button>
 
-        <div className="ml-auto flex items-center gap-2">
-          <button
-            onClick={() => router.push("/admin")}
-            className="rounded bg-gray-200 px-4 py-2 hover:bg-gray-300"
-          >
-            管理機能一覧へ
-          </button>
+      <button
+        onClick={() => router.push("/admin/posts")}
+        className="rounded bg-gray-200 px-4 py-2 hover:bg-gray-300 text-center"
+      >
+        記事一覧へ
+      </button>
+    </div>
 
-          <button
-            onClick={() => router.push("/admin/posts")}
-            className="rounded bg-gray-200 px-4 py-2 hover:bg-gray-300"
-          >
-            記事一覧へ
-          </button>
+    {/* ===== ヘッダー ===== */}
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+      <h1 className="text-2xl font-bold">投稿記事の新規作成</h1>
+
+      {/* PCのみリンクボタン表示 */}
+      <div className="hidden sm:flex sm:ml-auto gap-2">
+        <button
+          onClick={() => router.push("/admin")}
+          className="rounded bg-gray-200 px-4 py-2 hover:bg-gray-300"
+        >
+          管理機能一覧へ
+        </button>
+
+        <button
+          onClick={() => router.push("/admin/posts")}
+          className="rounded bg-gray-200 px-4 py-2 hover:bg-gray-300"
+        >
+          記事一覧へ
+        </button>
+      </div>
+    </div>
+
+    {isSubmitting && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+        <div className="flex items-center rounded-lg bg-white px-8 py-4 shadow-lg">
+          <FontAwesomeIcon
+            icon={faSpinner}
+            className="mr-2 animate-spin text-gray-500"
+          />
+          <div className="text-gray-500">処理中...</div>
+        </div>
+      </div>
+    )}
+
+    <form
+      onSubmit={handleSubmit}
+      className={twMerge("space-y-4", isSubmitting && "opacity-50")}
+    >
+      {/* ===== タイトル ===== */}
+      <div>
+        <label className="block font-bold">タイトル</label>
+        <input
+          className="w-full rounded-md border-2 px-2 py-1"
+          value={newTitle}
+          onChange={(e) => setNewTitle(e.target.value)}
+          required
+        />
+      </div>
+
+      {/* ===== 本文 ===== */}
+      <div>
+        <label className="block font-bold">本文</label>
+        <textarea
+          className="h-48 w-full rounded-md border-2 px-2 py-1"
+          value={newContent}
+          onChange={(e) => setNewContent(e.target.value)}
+          required
+        />
+      </div>
+
+      {/* ===== 要約 ===== */}
+      <div className="relative">
+        <label className="block font-semibold mb-1">
+          要約（150文字以内）
+        </label>
+
+        <textarea
+          className="border p-2 w-full h-24 pr-14"
+          value={summary}
+          maxLength={150}
+          onChange={(e) => setSummary(e.target.value)}
+          placeholder="ユーザーに興味を持ってもらうための要約を書きましょう"
+        />
+
+        <div
+          className={`absolute bottom-2 right-3 text-xs ${
+            summary.length >= 150 ? "text-red-500" : "text-gray-500"
+          }`}
+        >
+          {summary.length}/150
         </div>
       </div>
 
-      {isSubmitting && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="flex items-center rounded-lg bg-white px-8 py-4 shadow-lg">
-            <FontAwesomeIcon
-              icon={faSpinner}
-              className="mr-2 animate-spin text-gray-500"
-            />
-            <div className="text-gray-500">処理中...</div>
+      {/* ===== 成果物URL ===== */}
+      <div>
+        <label className="block font-bold">成果物URL</label>
+        <input
+          type="url"
+          placeholder="何か成果物がある時はリポジトリやアプリのURLを記載しましょう"
+          className="w-full rounded-md border-2 px-2 py-1"
+          value={resultUrl}
+          onChange={(e) => setResultUrl(e.target.value)}
+        />
+
+        {resultUrl && (
+          <div className="mt-1 text-sm text-red-500">
+            httpかhttpsで始めてください
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
-      <form
-        onSubmit={handleSubmit}
-        className={twMerge("space-y-4", isSubmitting && "opacity-50")}
-      >
-        <div>
-          <label className="block font-bold">タイトル</label>
-          <input
-            className="w-full rounded-md border-2 px-2 py-1"
-            value={newTitle}
-            onChange={(e) => setNewTitle(e.target.value)}
-            required
-          />
-        </div>
+      {/* ===== カバー画像 ===== */}
+      <div>
+        <label className="block font-bold mb-1">カバー画像</label>
 
-        <div>
-          <label className="block font-bold">本文</label>
-          <textarea
-            className="h-48 w-full rounded-md border-2 px-2 py-1"
-            value={newContent}
-            onChange={(e) => setNewContent(e.target.value)}
-            required
-          />
-        </div>
-
-        <div>
-  <label className="block font-bold mb-1">カバー画像</label>
-
-  {/* ボタン風ファイル選択 */}
-  <label
-    htmlFor="cover-image"
-    className="inline-block cursor-pointer rounded-md bg-indigo-500 px-5 py-1 font-bold text-white hover:bg-indigo-600"
-  >
-    画像を選択
-  </label>
-
-  <input
-    id="cover-image"
-    type="file"
-    accept="image/*"
-    className="hidden"
-    onChange={async (e) => {
-      if (!e.target.files || e.target.files.length === 0) return;
-      const file = e.target.files[0];
-
-      setImagePreviewUrl(URL.createObjectURL(file));
-      await handleImageUpload(file);
-    }}
-  />
-
-  {imagePreviewUrl && (
-    <>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={imagePreviewUrl}
-        alt="cover preview"
-        className="mt-2 h-32 rounded border object-contain"
-      />
-    </>
-  )}
-
-  {coverImageKey && (
-    <div className="mt-1 break-all text-xs text-gray-500">
-      coverImageKey: {coverImageKey}
-    </div>
-  )}
-</div>
-
-        <div className="flex items-center gap-2">
-          <span className="font-bold">タグ表示</span>
-          <button
-            type="button"
-            onClick={() => setCategoryCols(2)}
-            className={`rounded border px-2 py-1 ${
-              categoryCols === 2 ? "bg-blue-600 text-white" : ""
-            }`}
-          >
-            2列
-          </button>
-          <button
-            type="button"
-            onClick={() => setCategoryCols(3)}
-            className={`rounded border px-2 py-1 ${
-              categoryCols === 3 ? "bg-blue-600 text-white" : ""
-            }`}
-          >
-            3列
-          </button>
-        </div>
-
-        <div
-          className={twMerge(
-            "grid gap-3",
-            categoryCols === 2 ? "grid-cols-2" : "grid-cols-3"
-          )}
+        <label
+          htmlFor="cover-image"
+          className="inline-block cursor-pointer rounded-md bg-indigo-500 px-5 py-1 font-bold text-white hover:bg-indigo-600"
         >
-          {checkableCategories.map((c) => (
-            <label key={c.id} className="flex gap-1">
-              <input
-                type="checkbox"
-                checked={c.isSelect}
-                onChange={() => switchCategoryState(c.id)}
-              />
-              <span>{c.name}</span>
-            </label>
-          ))}
-        </div>
+          画像を選択
+        </label>
 
-        <div className="flex justify-end">
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="rounded-md bg-indigo-500 px-5 py-1 font-bold text-white hover:bg-indigo-600 disabled:opacity-50"
-          >
-            記事を投稿
-          </button>
-        </div>
-      </form>
-    </main>
-  );
+        <input
+          id="cover-image"
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={async (e) => {
+            if (!e.target.files || e.target.files.length === 0) return;
+            const file = e.target.files[0];
+
+            setImagePreviewUrl(URL.createObjectURL(file));
+            await handleImageUpload(file);
+          }}
+        />
+
+        {imagePreviewUrl && (
+          <img
+            src={imagePreviewUrl}
+            alt="cover preview"
+            className="mt-2 h-32 rounded border object-contain"
+          />
+        )}
+
+        {coverImageKey && (
+          <div className="mt-1 break-all text-xs text-gray-500">
+            coverImageKey: {coverImageKey}
+          </div>
+        )}
+      </div>
+
+      {/* ===== カラム変更（PCのみ表示） ===== */}
+      <div className="hidden sm:flex items-center gap-2">
+        <span className="font-bold">タグ表示</span>
+        <button
+          type="button"
+          onClick={() => setCategoryCols(2)}
+          className={`rounded border px-2 py-1 ${
+            categoryCols === 2 ? "bg-blue-600 text-white" : ""
+          }`}
+        >
+          2列
+        </button>
+        <button
+          type="button"
+          onClick={() => setCategoryCols(3)}
+          className={`rounded border px-2 py-1 ${
+            categoryCols === 3 ? "bg-blue-600 text-white" : ""
+          }`}
+        >
+          3列
+        </button>
+      </div>
+
+      {/* ===== 🔥 カテゴリ検索 ===== */}
+      <div>
+        <input
+          type="text"
+          placeholder="カテゴリ名で検索..."
+          value={categorySearch}
+          onChange={(e) => setCategorySearch(e.target.value)}
+          className="w-full rounded-md border px-3 py-2"
+        />
+      </div>
+
+      {/* ===== カテゴリ一覧（スマホ2列固定） ===== */}
+      <div
+        className={twMerge(
+          "grid gap-3 grid-cols-2",
+          categoryCols === 3 && "sm:grid-cols-3"
+        )}
+      >
+        {filteredCategories.map((c) => (
+          <label key={c.id} className="flex gap-1">
+            <input
+              type="checkbox"
+              checked={c.isSelect}
+              onChange={() => switchCategoryState(c.id)}
+            />
+            <span className="break-words">{c.name}</span>
+          </label>
+        ))}
+      </div>
+
+      {/* ===== 送信 ===== */}
+      <div className="flex justify-end">
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="rounded-md bg-indigo-500 px-5 py-1 font-bold text-white hover:bg-indigo-600 disabled:opacity-50"
+        >
+          記事を投稿📝
+        </button>
+      </div>
+    </form>
+  </main>
+);
 };
 
 export default Page;

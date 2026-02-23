@@ -38,6 +38,11 @@ export type PostCategory = Prisma.PostCategoryModel
  */
 export type Comment = Prisma.CommentModel
 /**
+ * Model Suggestion
+ * 
+ */
+export type Suggestion = Prisma.SuggestionModel
+/**
  * Model PostLike
  * 
  */
@@ -47,3 +52,8 @@ export type PostLike = Prisma.PostLikeModel
  * 
  */
 export type CommentLike = Prisma.CommentLikeModel
+/**
+ * Model PostView
+ * 
+ */
+export type PostView = Prisma.PostViewModel

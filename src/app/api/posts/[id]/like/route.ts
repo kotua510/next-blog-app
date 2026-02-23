@@ -37,3 +37,28 @@ export async function DELETE(
 
   return NextResponse.json({ success: true });
 }
+
+export async function GET(
+  req: Request,
+  { params }: { params: { id: string } }
+) {
+  const visitorId = await getVisitorId();
+
+  const [count, liked] = await Promise.all([
+    prisma.postLike.count({
+      where: { postId: params.id },
+    }),
+    prisma.postLike.findFirst({
+      where: {
+        postId: params.id,
+        visitorId,
+      },
+    }),
+  ]);
+
+  return NextResponse.json({
+    count,
+    liked: !!liked,
+  });
+}
+

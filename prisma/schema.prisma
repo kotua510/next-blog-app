@@ -20,8 +20,11 @@ model Post {
   title          String
   content        String
   coverImageKey  String?
+  resultUrl   String?
+  summary   String?  @db.VarChar(150)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+  viewCount     Int      @default(0)
   categories     PostCategory[]
   comments       Comment[]
   likes          PostLike[]
@@ -57,6 +60,15 @@ model Comment {
   likes     CommentLike[]
 }
 
+model Suggestion {
+  id        String   @id @default(uuid())
+  title     String
+  content   String
+  isHandled Boolean  @default(false) // ← 対応済み
+  createdAt DateTime @default(now())
+}
+
+
 //記事いいね
 model PostLike {
   id        String   @id @default(uuid())
@@ -76,4 +88,13 @@ model CommentLike {
   commentId String
   comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
   @@unique([commentId, visitorId])
+}
+
+model PostView {
+  id        String   @id @default(uuid())
+  postId    String
+  visitorId String
+  viewedAt  DateTime @default(now())
+
+  @@unique([postId, visitorId])
 }

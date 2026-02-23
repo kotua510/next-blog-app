@@ -37,3 +37,28 @@ export async function DELETE(
 
   return NextResponse.json({ success: true });
 }
+
+export async function GET(
+  req: Request,
+  { params }: { params: { id: string } }
+) {
+  const visitorId = await getVisitorId();
+
+  const count = await prisma.commentLike.count({
+    where: { commentId: params.id },
+  });
+
+  const liked = await prisma.commentLike.findUnique({
+    where: {
+      commentId_visitorId: {
+        commentId: params.id,
+        visitorId,
+      },
+    },
+  });
+
+  return NextResponse.json({
+    count,
+    liked: !!liked,
+  });
+}

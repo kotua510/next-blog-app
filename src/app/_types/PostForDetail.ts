@@ -8,5 +8,6 @@ export type PostForDetail = {
   title: string;
   content: string;
   coverImageKey: string | null;
+  resultUrl: string | null;
   categories: Category[];
 };

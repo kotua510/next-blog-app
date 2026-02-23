@@ -8,10 +8,15 @@ import { supabase } from "@/utils/supabase";
 import { useAuth } from "@/app/_hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import SuggestionModal from "@/app/_components/SuggestionModal";
+
 
 const Header: React.FC = () => {
   const router = useRouter();
   const { isLoading, session } = useAuth();
+
+  const [isSuggestionOpen, setIsSuggestionOpen] = useState(false);
+
 
   // ✅ hydration 対策
   const [mounted, setMounted] = useState(false);
@@ -28,51 +33,64 @@ const Header: React.FC = () => {
   };
 
   return (
-    <header>
-      <div className="bg-slate-800 py-2">
-        <div
-          className={twMerge(
-            "mx-4 max-w-2xl md:mx-auto",
-            "flex items-center",
-            "text-lg font-bold text-white"
-          )}
-        >
-          {/* 基準コンテナ */}
-          <div className="relative flex w-full items-center justify-between">
-            {/* 左：ロゴ */}
-            <div>
-              <Link href="/">
-                <FontAwesomeIcon icon={faFish} className="mr-1" />
-                コツァ’s ブログアプリ
-              </Link>
-            </div>
+  <header>
+    <div className="bg-slate-800 py-2">
+      <div
+        className={twMerge(
+          "mx-4 max-w-2xl md:mx-auto",
+          "text-lg font-bold text-white"
+        )}
+      >
+        {/* 基準コンテナ */}
+        <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center">
 
-            {/* 中央：Login / Logout */}
-            <div className="absolute left-1/2 -translate-x-1/2">
-              {!isLoading &&
-                (session ? (
-                  <button
-                    onClick={logout}
-                    className="hover:underline"
-                  >
-                    Logout
-                  </button>
-                ) : (
-                  <Link href="/login" className="hover:underline">
-                    Login
-                  </Link>
-                ))}
-            </div>
-
-            {/* 右：固定リンク */}
-            <div className="flex gap-x-6">
-              <Link href="/about">このサイトについて</Link>
-            </div>
+          {/* 左：タイトル */}
+          <div className="sm:flex-1 text-center sm:text-left">
+            <Link href="/">
+              <FontAwesomeIcon icon={faFish} className="mr-1" />
+              コツァ’sブログアプリ
+            </Link>
           </div>
+
+          {/* 中央：Login/Logout */}
+          <div className="sm:flex-1 text-center">
+            {!isLoading &&
+              (session ? (
+                <button onClick={logout} className="hover:underline">
+                  Logout
+                </button>
+              ) : (
+                <Link href="/login" className="hover:underline">
+                  Login
+                </Link>
+              ))}
+          </div>
+
+          {/* 右①：目安箱 */}
+          <div className="sm:flex-1 text-center">
+            <button
+              onClick={() => setIsSuggestionOpen(true)}
+              className="hover:underline"
+            >
+              目安箱
+            </button>
+          </div>
+
+          {/* 右②：このサイトについて */}
+          <div className="sm:flex-1 text-center sm:text-right">
+            <Link href="/about">このサイトについて</Link>
+          </div>
+
         </div>
       </div>
-    </header>
-  );
+    </div>
+
+    <SuggestionModal
+      isOpen={isSuggestionOpen}
+      onClose={() => setIsSuggestionOpen(false)}
+    />
+  </header>
+);
 };
 
 export default Header;

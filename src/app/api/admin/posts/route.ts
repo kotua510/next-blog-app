@@ -2,8 +2,8 @@ import { prisma } from "@/lib/prisma";
 import { NextResponse, NextRequest } from "next/server";
 import { supabase } from "@/utils/supabase";
 
-export const revalidate = 0; // ◀ サーバサイドのキャッシュを無効化する設定
-export const dynamic = "force-dynamic"; // ◀ 〃
+export const revalidate = 0;
+export const dynamic = "force-dynamic";
 
 /* ==========================
    リクエストBody型
@@ -11,8 +11,10 @@ export const dynamic = "force-dynamic"; // ◀ 〃
 type RequestBody = {
   title: string;
   content: string;
-  coverImageKey?: string; // ← nullは使わない
+  coverImageKey?: string;
+  summary?: string; 
   categoryIds: string[];
+  resultUrl?: string;
 };
 
 /* ==========================
@@ -41,30 +43,31 @@ export const GET = async (req: NextRequest) => {
 
   try {
     const posts = await prisma.post.findMany({
-  orderBy: { createdAt: "desc" },
-  select: {
-    id: true,
-    title: true,
-    createdAt: true,
-    categories: {
+      orderBy: { createdAt: "desc" },
       select: {
-        category: {
+        id: true,
+        title: true,
+        createdAt: true,
+        resultUrl: true, // ← そのままでOK
+        categories: {
           select: {
-            id: true,
-            name: true,
+            category: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
           },
         },
       },
-    },
-  },
-});
+    });
 
-const formattedPosts = posts.map((post) => ({
-  ...post,
-  categories: post.categories.map((pc) => pc.category),
-}));
+    const formattedPosts = posts.map((post) => ({
+      ...post,
+      categories: post.categories.map((pc) => pc.category),
+    }));
 
-return NextResponse.json(formattedPosts);
+    return NextResponse.json(formattedPosts);
   } catch (error) {
     console.error(error);
     return NextResponse.json(
@@ -100,7 +103,24 @@ export const POST = async (req: NextRequest) => {
 
   try {
     const body: RequestBody = await req.json();
-    const { title, content, coverImageKey, categoryIds } = body;
+    const {
+      title,
+      content,
+      coverImageKey,
+      categoryIds,
+      summary,
+      resultUrl,
+    } = body;
+
+    /* ===== resultUrl 正規化 ===== */
+    const normalizedResultUrl =
+      resultUrl && resultUrl.trim() !== "" ? resultUrl : undefined;
+    
+    const normalizedSummary =
+  summary && summary.trim() !== ""
+    ? summary.trim().slice(0, 150)
+    : undefined;
+
 
     /* ===== カテゴリ存在チェック ===== */
     const categories = await prisma.category.findMany({
@@ -119,7 +139,9 @@ export const POST = async (req: NextRequest) => {
       data: {
         title,
         content,
-        ...(coverImageKey && { coverImageKey }), // ← ここが超重要
+        ...(coverImageKey && { coverImageKey }),
+        ...(normalizedResultUrl && { resultUrl: normalizedResultUrl }), // ← 追加
+        ...(normalizedSummary && { summary: normalizedSummary }),
       },
     });
 

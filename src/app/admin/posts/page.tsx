@@ -3,11 +3,14 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/app/_hooks/useAuth";
+import { supabase } from "@/utils/supabase";
+
 
 type AdminPost = {
   id: string;
   title: string;
   createdAt: string;
+  resultUrl?: string;
   categories: {
     id: string;
     name: string;
@@ -28,6 +31,7 @@ const AdminPostsPage = () => {
   const [error, setError] = useState<string | null>(null);
 
   const [searchTerm, setSearchTerm] = useState("");
+  const [resultUrl, setResultUrl] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [sortKey, setSortKey] = useState<SortKey>("new");
@@ -70,23 +74,35 @@ const AdminPostsPage = () => {
 
   // ===== 削除 =====
   const handleDelete = async (postId: string, title: string) => {
-    if (!window.confirm(`「${title}」を削除しますか？`)) return;
-    if (!token) return;
+  // ===== ここ追加 =====
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-    const res = await fetch(`/api/admin/posts/${postId}`, {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+  if (user?.is_anonymous) {
+    alert("ゲストユーザーは削除できません");
+    return;
+  }
+  // =====================
 
-    if (!res.ok) {
-      alert("削除に失敗しました");
-      return;
-    }
+  if (!window.confirm(`「${title}」を削除しますか？`)) return;
+  if (!token) return;
 
-    setPosts((prev) => prev.filter((p) => p.id !== postId));
-  };
+  const res = await fetch(`/api/admin/posts/${postId}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok) {
+    alert("削除に失敗しました");
+    return;
+  }
+
+  setPosts((prev) => prev.filter((p) => p.id !== postId));
+};
+
 
   // ===== 検索 =====
   const filteredPosts = useMemo(() => {
@@ -156,145 +172,150 @@ const AdminPostsPage = () => {
   if (error) return <div className="text-red-600">{error}</div>;
 
   return (
-    <main className="space-y-6">
-      <header className="flex gap-2">
-        <Link
-          href="/admin/posts/new"
-          className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300"
-        >
-          記事新規作成
-        </Link>
-
-        <Link
-          href="/admin"
-          className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300"
-        >
-          管理画面トップ
-        </Link>
-      </header>
-
-      <h1 className="text-2xl font-bold">投稿管理</h1>
-
-      <div className="flex flex-wrap gap-2 items-center">
-        <input
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="タイトルで検索"
-          className="border px-3 py-2 rounded max-w-sm w-full"
-        />
-
-        <select
-          value={checkKey}
-          onChange={(e) => setCheckKey(e.target.value as checkKey)}
-          className="border px-2 py-2 rounded"
-        >
-          <option value="name">名前検索</option>
-          <option value="category">カテゴリ検索</option>
-        </select>
-
-        <select
-          value={sortKey}
-          onChange={(e) => setSortKey(e.target.value as SortKey)}
-          className="border px-2 py-2 rounded"
-        >
-          <option value="new">新しい順</option>
-          <option value="old">古い順</option>
-          <option value="title">タイトル順</option>
-        </select>
-
-        <div className="hidden sm:flex gap-2">
-          <button
-            onClick={() => setViewMode("list")}
-            className={`px-3 py-2 border rounded ${
-              viewMode === "list" ? "bg-blue-600 text-white" : ""
-            }`}
-          >
-            縦1列
-          </button>
-
-          <button
-            onClick={() => setViewMode("grid")}
-            className={`px-3 py-2 border rounded ${
-              viewMode === "grid" ? "bg-blue-600 text-white" : ""
-            }`}
-          >
-            縦2列
-          </button>
-        </div>
-      </div>
-
-      <ul
-        className={
-          viewMode === "grid"
-            ? "grid grid-cols-1 sm:grid-cols-2 gap-4"
-            : "space-y-2"
-        }
+  <main className="space-y-6 px-4 sm:px-0">
+    {/* ===== リンクボタン ===== */}
+    <header className="flex flex-col sm:flex-row gap-2">
+      <Link
+        href="/admin/posts/new"
+        className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 text-center"
       >
-        {paginatedPosts.map((post) => (
-          <li
-            key={post.id}
-            className={`border rounded flex items-center justify-between ${
-              viewMode === "list" ? "p-3" : "p-2"
-            }`}
-          >
-            <div className="flex flex-col gap-1">
-              <span className="font-medium">{post.title}</span>
+        記事新規作成
+      </Link>
 
-              {post.categories?.length > 0 && (
-                <div className="flex flex-wrap gap-1">
-                  {post.categories.map((cat) => (
-                    <span
-                      key={cat.id}
-                      className="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-700"
-                    >
-                      {cat.name}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
+      <Link
+        href="/admin"
+        className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 text-center"
+      >
+        管理画面トップ
+      </Link>
+    </header>
 
-            <div className="flex gap-2 shrink-0">
-              <Link
-                href={`/admin/posts/${post.id}`}
-                className="px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700"
-              >
-                編集
-              </Link>
+    <h1 className="text-2xl font-bold">投稿管理</h1>
 
-              <button
-                onClick={() => handleDelete(post.id, post.title)}
-                className="px-3 py-1 rounded bg-red-600 text-white hover:bg-red-700"
-              >
-                削除
-              </button>
-            </div>
-          </li>
-        ))}
-      </ul>
+    {/* ===== 検索・ソート ===== */}
+    <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2 sm:items-center">
+      <input
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        placeholder="タイトルで検索🔍"
+        className="border px-3 py-2 rounded w-full sm:max-w-sm"
+      />
 
-      {totalPages > 1 && (
-        <div className="flex gap-2 flex-wrap">
-          {Array.from({ length: totalPages }).map((_, i) => {
-            const page = i + 1;
-            return (
-              <button
-                key={page}
-                onClick={() => setCurrentPage(page)}
-                className={`px-3 py-1 border rounded ${
-                  page === currentPage
-                    ? "bg-blue-600 text-white"
-                    : "bg-white"
-                }`}
-              >
-                {page}
-              </button>
-            );
-          })}
-        </div>
-      )}
-    </main>
-  );
+      <select
+        value={checkKey}
+        onChange={(e) => setCheckKey(e.target.value as checkKey)}
+        className="border px-2 py-2 rounded w-full sm:w-auto"
+      >
+        <option value="name">名前検索</option>
+        <option value="category">カテゴリ検索</option>
+      </select>
+
+      <select
+        value={sortKey}
+        onChange={(e) => setSortKey(e.target.value as SortKey)}
+        className="border px-2 py-2 rounded w-full sm:w-auto"
+      >
+        <option value="new">≡新しい順</option>
+        <option value="old">≡古い順</option>
+        <option value="title">≡名前順</option>
+      </select>
+
+      {/* PCのみ表示 */}
+      <div className="hidden sm:flex gap-2">
+        <button
+          onClick={() => setViewMode("list")}
+          className={`px-3 py-2 border rounded ${
+            viewMode === "list" ? "bg-blue-600 text-white" : ""
+          }`}
+        >
+          縦1列
+        </button>
+
+        <button
+          onClick={() => setViewMode("grid")}
+          className={`px-3 py-2 border rounded ${
+            viewMode === "grid" ? "bg-blue-600 text-white" : ""
+          }`}
+        >
+          縦2列
+        </button>
+      </div>
+    </div>
+
+    {/* ===== 記事一覧 ===== */}
+    <ul
+      className={
+        viewMode === "grid"
+          ? "grid grid-cols-1 sm:grid-cols-2 gap-4"
+          : "space-y-2"
+      }
+    >
+      {paginatedPosts.map((post) => (
+        <li
+          key={post.id}
+          className={`border rounded flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 ${
+            viewMode === "list" ? "p-3" : "p-2"
+          }`}
+        >
+          <div className="flex flex-col gap-1">
+            <span className="font-medium break-words">{post.title}</span>
+
+            {post.categories?.length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {post.categories.map((cat) => (
+                  <span
+                    key={cat.id}
+                    className="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-700"
+                  >
+                    {cat.name}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="flex gap-2 shrink-0 justify-end">
+            <Link
+              href={`/admin/posts/${post.id}`}
+              className="px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700"
+            >
+              編集✏️
+            </Link>
+
+            <button
+              onClick={() => handleDelete(post.id, post.title)}
+              className="px-3 py-1 rounded bg-red-600 text-white hover:bg-red-700"
+            >
+              削除🗑️
+            </button>
+          </div>
+        </li>
+      ))}
+    </ul>
+
+    {/* ===== ページネーション ===== */}
+    {totalPages > 1 && (
+      <div className="flex gap-2 flex-wrap justify-center sm:justify-start">
+        {Array.from({ length: totalPages }).map((_, i) => {
+          const page = i + 1;
+          return (
+            <button
+              key={page}
+              onClick={() => setCurrentPage(page)}
+              className={`px-3 py-1 border rounded ${
+                page === currentPage
+                  ? "bg-blue-600 text-white"
+                  : "bg-white"
+              }`}
+            >
+              {page}
+            </button>
+          );
+        })}
+      </div>
+    )}
+  </main>
+);
 };
 
 export default AdminPostsPage;

@@ -8,8 +8,13 @@ export type Post = {
   title: string;
   content: string;
   createdAt: string;
+  resultUrl: string | null;
+  summary?: string | null;
   categories: Category[];
   coverImage: CoverImage;
   comments: Comment[];
   likes: PostLike[];
+  likeCount: number;
+  commentCount: number;
+  viewCount: number;
 };
