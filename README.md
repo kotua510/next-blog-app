@@ -124,6 +124,7 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 さらにランキングを見て検索しなくてもいいようにランキングの記事の名前から直接記事の詳細画面に飛べるようにしました。<br>
 この機能によって満足度の高い記事、注目されている記事を見つけることができます。<br>
 <img src="README_image/n機能3.png" alt="説明" width="300">
+----------------------------------------------
 <img src="README_image/n機能3-2.png" alt="説明" width="300"><br>
 
 - 閲覧用記事一覧ページの記事の要約<br>
@@ -150,6 +151,7 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 8の倍数ずつページは増えていき下のボタンでページを切り替えることができます。<br>
 この機能によって記事やカテゴリなどの数が増えてきたときに多くスクロールする必要がなくなります。 また、一ページことに表示する項目を減らすことによってページ自体の見やすさを向上させています。<br>
 <img src="README_image/n機能7.png" alt="説明" width="500"><br>
+----------------------------------------------
 <img src="README_image/n機能7-2.png" alt="説明" width="500"><br>
 
 - 記事詳細ページの記事のいいねやコメントを追加する機能<br>
@@ -159,6 +161,7 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 コメントによって作者はユーザーの反応を知ることができ、感想やフィードバックを得ることができます。 コメントのいいねにより参考になったり役に立ったコメント、評価の高いコメントを知ることができます。<br>
 コメントには禁則文字が設定されていて不適切な発言などはそもそも送信できないようにしました。 これによってコメントによって不快な気持ちになってしまうことを防ぎました。<br>
 <img src="README_image/n機能8.png" alt="説明" width="500"><br>
+----------------------------------------------
 <img src="README_image/n機能8-2.png" alt="説明" width="500"><br>
 
 - 記事の詳細ページに成果物URLを表示<br>
@@ -215,6 +218,7 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 この機能はカテゴリの上にある2列、3列ボタンによって記事編集、新規作成ページのカテゴリ表示方法を切り替えることができます。<br>
 この機能によって2列か3列ユーザーは好きな表示方法を選択することができます。また、カテゴリ数の増加にも3列で対応することができます。<br>
 <img src="README_image/n機能18.png" alt="説明" width="500"><br>
+----------------------------------------------
 <img src="README_image/n機能18-2.png" alt="説明" width="500"><br>
 
 - 管理用記事新規作成ページと記事編集ページのカテゴリを名前検索する機能<br>
@@ -260,6 +264,7 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 上部のボタンによって表示する意見、感想を絞り込むまたは、全てを表示することができる。
 意見、感想の状態によって表示を切り替えます。<br>
 <img src="README_image/n機能26.png" alt="説明" width="500"><br>
+----------------------------------------------
 <img src="README_image/n機能26-2.png" alt="説明" width="500"><br>
 
 - ログインページのメールアドレス形式誘導機能<br>
