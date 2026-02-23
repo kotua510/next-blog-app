@@ -36,4 +36,51 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 
 
-#github用
+# コツァ'sブログアプリ
+
+- 概要<br>
+このアプリは記事を投稿、閲覧することができるブログアプリです。<br>
+特に技術系の記事に向いていますがいろんなジャンルの記事を投稿することができます。<br>
+
+- 開発の背景・経緯<br>
+このアプリを開発しようと考えたきっかけは自分が普段記事を読んだりwebサービスを理由するなかで感じた不満を解決しようと考えたからです。<br>
+詳しくは後の機能紹介や工夫点で書きますが、目安箱や記事の要約など私が普段から欲しいと考えていた機能を今回のアプリでは実装しました。<br>
+
+- 公開URL<br>
+<a href="https://next-blog-app-lake.vercel.app">https://next-blog-app-lake.vercel.app</a><br>
+
+## 特徴と機能の説明
+
+- ページについての説明
+- 最低でも3個ぐらいは、特徴を箇条書きしましょう。
+
+
+## 使用技術 (技術スタック)
+
+- 使用した言語やフレームワーク
+    - 少なくとも TypeScript と Next.js、Prisma は書いておくべき。
+    - その他、アプリを構成する主要なライブラリなどを記載する。
+    - ReReact Hook Form や zod、SWR を使っている場合は明示する。
+- 開発に使用したツールやウェブサービス
+    - VSCode、Supabase、Vercel は書いておくべき。
+- システム構成図
+
+## 開発期間・体制
+
+- 開発体制: 個人開発
+- 開発期間: 2026.01.xx ~ 2026.02.xx (約XXX時間)
+
+## 工夫した点・苦労した点
+
+- 特に、技術的な目標や挑戦を持って取り組んだ場合は記載すると良いです。
+
+## 既知の課題と今後の展望
+
+- 改良・改善したいこと。
+- 機能拡張のロードマップなど。
+
+## 連絡先 (任意)
+
+- 作品集としてのポートフォリオのURL
+- SNSアカウント
+- 所属など
