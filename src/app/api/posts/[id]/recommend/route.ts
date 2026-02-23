@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 type RecommendedItem = {
@@ -9,15 +9,16 @@ type RecommendedItem = {
 };
 
 export async function GET(
-  _req: Request,
-  { params }: { params: { id: string } }
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const postId = params.id;
+  const { id } = await params;
+  
 
   try {
     // ================= 対象記事取得 =================
     const post = await prisma.post.findUnique({
-      where: { id: postId },
+  where: { id },
       include: {
         categories: true, // ← PostCategory[]
       },
@@ -36,7 +37,7 @@ export async function GET(
     if (categoryIds.length > 0) {
       const candidates = await prisma.post.findMany({
         where: {
-          id: { not: postId },
+          id: { not: id },
           categories: {
             some: {
               categoryId: { in: categoryIds }, // ← ★ここが最重要修正
@@ -68,7 +69,7 @@ export async function GET(
 
     // ================= 足りなければランダム補充 =================
 if (recommended.length < 5) {
-  const excludeIds = [postId, ...recommended.map((r) => r.id)];
+  const excludeIds = [id, ...recommended.map((r) => r.id)];
 
   // 🔥 多めに取得
   const pool = await prisma.post.findMany({

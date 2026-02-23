@@ -1,17 +1,19 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getVisitorId } from "@/lib/visitor";
 
+
 export async function POST(
-  req: Request,
-  { params }: { params: { id: string } }
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const visitorId = await getVisitorId();
 
   try {
     await prisma.postLike.create({
       data: {
-        postId: params.id,
+        postId: id,
         visitorId,
       },
     });
@@ -23,14 +25,15 @@ export async function POST(
 }
 
 export async function DELETE(
-  req: Request,
-  { params }: { params: { id: string } }
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const visitorId = await getVisitorId();
 
   await prisma.postLike.deleteMany({
     where: {
-      postId: params.id,
+      postId: id,
       visitorId,
     },
   });
@@ -39,18 +42,19 @@ export async function DELETE(
 }
 
 export async function GET(
-  req: Request,
-  { params }: { params: { id: string } }
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const visitorId = await getVisitorId();
 
   const [count, liked] = await Promise.all([
     prisma.postLike.count({
-      where: { postId: params.id },
+      where: { postId: id },
     }),
     prisma.postLike.findFirst({
       where: {
-        postId: params.id,
+        postId: id,
         visitorId,
       },
     }),

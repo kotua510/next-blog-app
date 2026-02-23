@@ -1,17 +1,18 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getVisitorId } from "@/lib/visitor";
 
 export async function POST(
-  req: Request,
-  { params }: { params: { id: string } }
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const visitorId = await getVisitorId();
 
   try {
     await prisma.commentLike.create({
       data: {
-        commentId: params.id,
+        commentId: id,
         visitorId,
       },
     });
@@ -23,14 +24,15 @@ export async function POST(
 }
 
 export async function DELETE(
-  req: Request,
-  { params }: { params: { id: string } }
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const visitorId = await getVisitorId();
 
   await prisma.commentLike.deleteMany({
     where: {
-      commentId: params.id,
+      commentId: id,
       visitorId,
     },
   });
@@ -39,19 +41,20 @@ export async function DELETE(
 }
 
 export async function GET(
-  req: Request,
-  { params }: { params: { id: string } }
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const visitorId = await getVisitorId();
 
   const count = await prisma.commentLike.count({
-    where: { commentId: params.id },
+    where: { commentId: id },
   });
 
   const liked = await prisma.commentLike.findUnique({
     where: {
       commentId_visitorId: {
-        commentId: params.id,
+        commentId: id,
         visitorId,
       },
     },

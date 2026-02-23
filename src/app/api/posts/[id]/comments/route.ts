@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getVisitorId } from "@/lib/visitor";
 
@@ -32,9 +32,10 @@ const containsNgWord = (text: string) => {
 };
 
 export async function POST(
-  req: Request,
-  { params }: { params: { id: string } }
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const visitorId = await getVisitorId();
   const body = await req.json();
 
@@ -56,7 +57,7 @@ export async function POST(
 
   const comment = await prisma.comment.create({
     data: {
-      postId: params.id,
+      postId: id,
       content: body.content,
     },
   });
@@ -72,13 +73,14 @@ export async function POST(
 
 
 export async function GET(
-  req: Request,
-  { params }: { params: { id: string } }
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const visitorId = await getVisitorId();
 
   const comments = await prisma.comment.findMany({
-    where: { postId: params.id },
+    where: { postId: id },
     orderBy: { createdAt: "desc" },
     include: {
       _count: { select: { likes: true } },
@@ -101,9 +103,10 @@ export async function GET(
 }
 
 export async function DELETE(
-  req: Request,
-  { params }: { params: { id: string } }
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const body = await req.json();
     const { commentId } = body;
@@ -116,7 +119,7 @@ export async function DELETE(
     const comment = await prisma.comment.findFirst({
       where: {
         id: commentId,
-        postId: params.id,
+        postId: id,
       },
     });
 
