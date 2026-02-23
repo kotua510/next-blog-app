@@ -410,7 +410,7 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 <img src="README_image/n機能26.png" alt="説明" width="500"><br>
 ----------------------------------------------
 <img src="README_image/n機能26-2.png" alt="説明" width="500"><br>
-----------------------------------------------
+---------------------------------------------------------
 <img src="README_image/n目安箱管理.png" alt="説明" width="500"><br>
 
 - ログイン、ゲストログインを実装したこと<br>
