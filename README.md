@@ -121,8 +121,8 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 ランキングに実際の数値を表示することによってランキングのスケールが分かるようにしました。
 さらにランキングを見て検索しなくてもいいようにランキングの記事の名前から直接記事の詳細画面に飛べるようにしました。<br>
 この機能によって満足度の高い記事、注目されている記事を見つけることができます。<br>
-<img src="README_image/n機能3.png" alt="説明" width="500"><br>
-<img src="README_image/n機能3-2.png" alt="説明" width="500"><br>
+<img src="README_image/n機能3.png" alt="説明" width="300">
+<img src="README_image/n機能3-2.png" alt="説明" width="300"><br>
 
 - 閲覧用記事一覧ページの記事の要約<br>
 記事をすべて読まなくても記事の内容が分かるように要約機能を実装しました。
