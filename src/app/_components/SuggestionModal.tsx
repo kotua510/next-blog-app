@@ -68,7 +68,6 @@ const SuggestionModal: React.FC<Props> = ({ isOpen, onClose }) => {
       >
         <h2 className="font-bold text-lg mb-4">目安箱</h2>
 
-        {/* ✅ タイトル */}
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
@@ -76,7 +75,6 @@ const SuggestionModal: React.FC<Props> = ({ isOpen, onClose }) => {
           className="w-full border rounded p-2 mb-3"
         />
 
-        {/* ✅ 本文 */}
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}

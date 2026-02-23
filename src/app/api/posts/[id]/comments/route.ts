@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getVisitorId } from "@/lib/visitor";
 
-/* ================= NGワード設定 ================= */
 const NG_WORDS = [
   "死ね",
   "ばか",
@@ -14,15 +13,12 @@ const NG_WORDS = [
   "禁則ワード2"
 ];
 
-/* ================= 正規化関数 ================= */
-// 大文字小文字・全角半角ゆる対策
 const normalizeText = (text: string) => {
   return text
     .toLowerCase()
-    .normalize("NFKC"); // 全角→半角など
+    .normalize("NFKC");
 };
 
-/* ================= NGチェック ================= */
 const containsNgWord = (text: string) => {
   const normalized = normalizeText(text);
 
@@ -39,7 +35,6 @@ export async function POST(
   const visitorId = await getVisitorId();
   const body = await req.json();
 
-  /* 🔥 空チェック強化（空白のみ防止） */
   if (!body.content || !body.content.trim()) {
     return NextResponse.json(
       { message: "内容が空です" },
@@ -47,7 +42,6 @@ export async function POST(
     );
   }
 
-  /* 🔥 NGワードチェック */
   if (containsNgWord(body.content)) {
     return NextResponse.json(
       { message: "使用できない単語が含まれています" },
@@ -96,7 +90,7 @@ export async function GET(
     content: c.content,
     createdAt: c.createdAt,
     likeCount: c._count.likes,
-    liked: c.likes.length > 0, // 🔥 自分がいいね済みか
+    liked: c.likes.length > 0,
   }));
 
   return NextResponse.json(formatted);
@@ -115,7 +109,6 @@ export async function DELETE(
       return NextResponse.json({ message: "commentIdが必要" }, { status: 400 });
     }
 
-    // その投稿に属するコメントかチェック（安全対策）
     const comment = await prisma.comment.findFirst({
       where: {
         id: commentId,

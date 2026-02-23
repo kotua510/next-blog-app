@@ -10,9 +10,7 @@ import { supabase } from "@/utils/supabase";
 import CryptoJS from "crypto-js";
 
 
-/* ==========================
-   型定義
-   ========================== */
+// 型定義
 type CategoryApiResponse = {
   id: string;
   name: string;
@@ -26,9 +24,6 @@ type SelectableCategory = {
   isSelect: boolean;
 };
 
-/* ==========================
-   ユーティリティ
-   ========================== */
 const calculateMD5Hash = async (file: File): Promise<string> => {
   const buffer = await file.arrayBuffer();
   const wordArray = CryptoJS.lib.WordArray.create(buffer);
@@ -51,8 +46,6 @@ const Page: React.FC = () => {
   const [coverImageKey, setCoverImageKey] = useState<string | undefined>();
   const [resultUrl, setResultUrl] = useState("");
 
-
-  // ★ 画像プレビュー用
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
 
   const [checkableCategories, setCheckableCategories] = useState<
@@ -63,17 +56,11 @@ const Page: React.FC = () => {
 
   const [categorySearch, setCategorySearch] = useState("");
 
-  /* ==========================
-     認証チェック
-     ========================== */
   useEffect(() => {
     if (authLoading) return;
     if (!session) router.replace("/login");
   }, [authLoading, session, router]);
 
-  /* ==========================
-     カテゴリ取得
-     ========================== */
   useEffect(() => {
     if (!session) return;
 
@@ -124,9 +111,6 @@ const Page: React.FC = () => {
     );
   };
 
-  /* ==========================
-     画像アップロード
-     ========================== */
   const handleImageUpload = async (file: File) => {
     const hash = await calculateMD5Hash(file);
     const path = `private/${hash}`;
@@ -143,9 +127,6 @@ const Page: React.FC = () => {
     setCoverImageKey(data.path);
   };
 
-  /* ==========================
-     投稿処理
-     ========================== */
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
@@ -170,7 +151,7 @@ const Page: React.FC = () => {
         title: newTitle,
         content: newContent,
         resultUrl: resultUrl || undefined,
-        summary: summary || undefined, // ← 追加
+        summary: summary || undefined,
         coverImageKey,
         categoryIds: checkableCategories
           ? checkableCategories.filter((c) => c.isSelect).map((c) => c.id)
@@ -212,20 +193,14 @@ const Page: React.FC = () => {
   );
 }, [checkableCategories, categorySearch]);
 
-  /* ==========================
-     プレビューURL解放
-     ========================== */
   useEffect(() => {
     return () => {
       if (imagePreviewUrl) {
-        URL.revokeObjectURL(imagePreviewUrl); //ブラウザから一時的なURLを発行
+        URL.revokeObjectURL(imagePreviewUrl);
       }
     };
   }, [imagePreviewUrl]);
 
-  /* ==========================
-     表示制御
-     ========================== */
   if (authLoading || !session) {
     return (
       <div className="text-gray-500">
@@ -248,12 +223,9 @@ const Page: React.FC = () => {
     return <div className="text-red-500">{fetchErrorMsg}</div>;
   }
 
-  /* ==========================
-     JSX
-     ========================== */
+
   return (
   <main className="space-y-4 px-4 sm:px-0">
-    {/* ===== スマホ：リンクボタン最上部 ===== */}
     <div className="flex flex-col gap-2 sm:hidden">
       <button
         onClick={() => router.push("/admin")}
@@ -270,11 +242,9 @@ const Page: React.FC = () => {
       </button>
     </div>
 
-    {/* ===== ヘッダー ===== */}
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
       <h1 className="text-2xl font-bold">投稿記事の新規作成</h1>
 
-      {/* PCのみリンクボタン表示 */}
       <div className="hidden sm:flex sm:ml-auto gap-2">
         <button
           onClick={() => router.push("/admin")}
@@ -308,7 +278,6 @@ const Page: React.FC = () => {
       onSubmit={handleSubmit}
       className={twMerge("space-y-4", isSubmitting && "opacity-50")}
     >
-      {/* ===== タイトル ===== */}
       <div>
         <label className="block font-bold">タイトル</label>
         <input
@@ -319,7 +288,6 @@ const Page: React.FC = () => {
         />
       </div>
 
-      {/* ===== 本文 ===== */}
       <div>
         <label className="block font-bold">本文</label>
         <textarea
@@ -330,7 +298,6 @@ const Page: React.FC = () => {
         />
       </div>
 
-      {/* ===== 要約 ===== */}
       <div className="relative">
         <label className="block font-semibold mb-1">
           要約（150文字以内）
@@ -353,7 +320,6 @@ const Page: React.FC = () => {
         </div>
       </div>
 
-      {/* ===== 成果物URL ===== */}
       <div>
         <label className="block font-bold">成果物URL</label>
         <input
@@ -371,7 +337,6 @@ const Page: React.FC = () => {
         )}
       </div>
 
-      {/* ===== カバー画像 ===== */}
       <div>
         <label className="block font-bold mb-1">カバー画像</label>
 
@@ -409,9 +374,8 @@ const Page: React.FC = () => {
             coverImageKey: {coverImageKey}
           </div>
         )}
-      </div>
-
-      {/* ===== カラム変更（PCのみ表示） ===== */}
+        </div>
+        
       <div className="hidden sm:flex items-center gap-2">
         <span className="font-bold">タグ表示</span>
         <button
@@ -434,7 +398,6 @@ const Page: React.FC = () => {
         </button>
       </div>
 
-      {/* ===== 🔥 カテゴリ検索 ===== */}
       <div>
         <input
           type="text"
@@ -445,7 +408,6 @@ const Page: React.FC = () => {
         />
       </div>
 
-      {/* ===== カテゴリ一覧（スマホ2列固定） ===== */}
       <div
         className={twMerge(
           "grid gap-3 grid-cols-2",
@@ -464,7 +426,6 @@ const Page: React.FC = () => {
         ))}
       </div>
 
-      {/* ===== 送信 ===== */}
       <div className="flex justify-end">
         <button
           type="submit"

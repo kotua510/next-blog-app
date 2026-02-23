@@ -11,7 +11,6 @@ import Link from "next/link";
 import { supabase } from "@/utils/supabase";
 
 
-// ===== APIレスポンス型 =====
 type CategoryApiResponse = {
   id: string;
   name: string;
@@ -19,10 +18,8 @@ type CategoryApiResponse = {
   updatedAt: string;
 };
 
-// ===== ソートキー =====
 type SortKey = "new" | "old" | "name";
 
-// ===== ページ本体 =====
 const Page: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -31,14 +28,11 @@ const Page: React.FC = () => {
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newCategoryNameError, setNewCategoryNameError] = useState("");
 
-  // 検索・ソート用
   const [searchTerm, setSearchTerm] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("new");
 
-  // カテゴリ配列
   const [categories, setCategories] = useState<Category[] | null>(null);
 
-  // ===== カテゴリ取得 =====
   const fetchCategories = async () => {
     try {
       setIsLoading(true);
@@ -78,7 +72,6 @@ const Page: React.FC = () => {
     fetchCategories();
   }, []);
 
-  // ===== バリデーション =====
   const isValidCategoryName = (name: string): string => {
     if (name.length < 2 || name.length > 16) {
       return "2文字以上16文字以内で入力してください。";
@@ -94,11 +87,9 @@ const Page: React.FC = () => {
     setNewCategoryName(e.target.value);
   };
 
-  // ===== 追加処理 =====
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
   e.preventDefault();
 
-  // 🔑 セッション取得
   const {
     data: { session },
   } = await supabase.auth.getSession();
@@ -110,7 +101,6 @@ const Page: React.FC = () => {
     return;
   }
 
-  // 🔒 ゲストチェック
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -128,7 +118,7 @@ const Page: React.FC = () => {
       cache: "no-store",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`, // ← ★超重要
+        Authorization: `Bearer ${accessToken}`, 
       },
       body: JSON.stringify({ name: newCategoryName }),
     });
@@ -154,7 +144,6 @@ const Page: React.FC = () => {
 };
 
 
-  // ===== 検索 =====
   const filteredCategories = useMemo(() => {
     if (!categories) return [];
     return categories.filter((cat) =>
@@ -162,7 +151,6 @@ const Page: React.FC = () => {
     );
   }, [categories, searchTerm]);
 
-  // ===== ソート =====
   const sortedCategories = useMemo(() => {
     const copy = [...filteredCategories];
 
@@ -188,7 +176,6 @@ const Page: React.FC = () => {
     }
   }, [filteredCategories, sortKey]);
 
-  // ===== ローディング・エラー =====
   if (isLoading) {
     return (
       <div className="text-gray-500">
@@ -202,10 +189,8 @@ const Page: React.FC = () => {
     return <div className="text-red-500">{fetchErrorMsg}</div>;
   }
 
-  // ===== 表示 =====
   return (
   <main className="space-y-6 px-4 sm:px-0 max-w-3xl mx-auto">
-    {/* ===== スマホ：リンク最上部 ===== */}
     <div className="flex flex-col gap-2 sm:hidden">
       <Link
         href="/admin"
@@ -221,11 +206,9 @@ const Page: React.FC = () => {
       </Link>
     </div>
 
-    {/* ===== ヘッダー ===== */}
     <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="text-2xl font-bold">カテゴリの新規作成</div>
 
-      {/* PCのみ */}
       <div className="hidden sm:flex gap-2">
         <Link
           href="/admin"
@@ -299,7 +282,6 @@ const Page: React.FC = () => {
       作成されたカテゴリの一覧📜
     </div>
 
-    {/* 検索・ソートUI */}
     <div className="mb-3 flex flex-col sm:flex-row sm:flex-wrap gap-2">
       <input
         type="text"

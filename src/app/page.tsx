@@ -29,9 +29,6 @@ const Page: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [loadingSummary, setLoadingSummary] = useState(false);
 
-
-  /* ===== 投稿取得 ===== */
-  /* ===== 投稿取得 ===== */
 useEffect(() => {
   const fetchPosts = async () => {
     try {
@@ -50,15 +47,12 @@ useEffect(() => {
 
   fetchPosts();
 
-  // 👇 これが超重要（戻った時に再取得）
   const handleFocus = () => fetchPosts();
   window.addEventListener("focus", handleFocus);
 
   return () => window.removeEventListener("focus", handleFocus);
 }, []);
 
-
-  /* ===== 検索 ===== */
   const filteredPosts = useMemo(() => {
     const keyword = searchTerm.toLowerCase();
     if (!keyword) return posts;
@@ -79,7 +73,6 @@ useEffect(() => {
     }
   }, [posts, searchTerm, checkKey]);
 
-  /* ===== ソート ===== */
   const sortedPosts = useMemo(() => {
     const copy = [...filteredPosts];
     switch (sortKey) {
@@ -104,10 +97,7 @@ useEffect(() => {
     }
   }, [filteredPosts, sortKey]);
 
-  
 
-
-  /* ===== ページネーション ===== */
   const totalPages = Math.ceil(sortedPosts.length / ITEMS_PER_PAGE);
 
   const paginatedPosts = useMemo(() => {
@@ -119,7 +109,6 @@ useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, sortKey, checkKey]);
 
-  /* ===== ランキング生成（同率同順位） ===== */
   function buildRanking(
     posts: Post[],
     key: "likeCount" | "viewCount"
@@ -151,7 +140,6 @@ useEffect(() => {
     [posts]
   );
 
-  /* ===== 表示 ===== */
   if (loading) {
     return (
       <div className="text-gray-500">
@@ -165,15 +153,12 @@ useEffect(() => {
 
   return (
   <main className="flex flex-col xl:flex-row gap-6 xl:gap-12 max-w-[1500px] mx-auto px-4 sm:px-6">
-    {/* ================= 左：メイン ================= */}
     <div className="flex-[3] space-y-8">
-      {/* ===== スマホ用ランキング（上部表示） ===== */}
       <section className="xl:hidden space-y-6">
         <RankingSidebar title="❤ いいねランキング👑" posts={likeRanking} />
         <RankingSidebar title="👀 閲覧数ランキング👑" posts={viewRanking} />
       </section>
 
-      {/* ===== 検索・ソート ===== */}
       <section className="space-y-4">
         <h1 className="text-2xl font-bold">記事一覧</h1>
 
@@ -206,7 +191,6 @@ useEffect(() => {
         </div>
       </section>
 
-      {/* ===== 記事一覧 ===== */}
       <section>
         <div
           className={
@@ -243,7 +227,6 @@ useEffect(() => {
       </section>
     </div>
 
-    {/* ================= PC右サイドバー ================= */}
     <aside className="flex-[1] hidden xl:block space-y-6">
       <RankingSidebar title="❤ いいねランキング👑" posts={likeRanking} />
       <RankingSidebar title="👀 閲覧数ランキング👑" posts={viewRanking} />

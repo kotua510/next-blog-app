@@ -33,7 +33,7 @@ export default function CommentSection({
 
     const data = await res.json();
 
-    // 🔥 エラー表示（NGワード含む）
+    // エラー
     if (!res.ok) {
       alert(data.message || "コメント投稿に失敗しました");
       return;

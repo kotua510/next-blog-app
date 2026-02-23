@@ -16,11 +16,10 @@ export async function GET(
   
 
   try {
-    // ================= 対象記事取得 =================
     const post = await prisma.post.findUnique({
   where: { id },
       include: {
-        categories: true, // ← PostCategory[]
+        categories: true,
       },
     });
 
@@ -28,19 +27,17 @@ export async function GET(
       return NextResponse.json([]);
     }
 
-    // 🔥 中間テーブルから categoryId を取る
     const categoryIds = post.categories.map((c) => c.categoryId);
 
     let recommended: RecommendedItem[] = [];
 
-    // ================= 類似記事取得 =================
     if (categoryIds.length > 0) {
       const candidates = await prisma.post.findMany({
         where: {
           id: { not: id },
           categories: {
             some: {
-              categoryId: { in: categoryIds }, // ← ★ここが最重要修正
+              categoryId: { in: categoryIds },
             },
           },
         },
@@ -49,11 +46,10 @@ export async function GET(
         },
       });
 
-      // 🔥 一致カテゴリ数でスコア計算
       recommended = candidates
         .map((p): RecommendedItem => {
           const matchCount = p.categories.filter((c) =>
-            categoryIds.includes(c.categoryId) // ← ここも修正
+            categoryIds.includes(c.categoryId)
           ).length;
 
           return {
@@ -67,19 +63,16 @@ export async function GET(
         .slice(0, 5);
     }
 
-    // ================= 足りなければランダム補充 =================
 if (recommended.length < 5) {
   const excludeIds = [id, ...recommended.map((r) => r.id)];
 
-  // 🔥 多めに取得
   const pool = await prisma.post.findMany({
     where: {
       id: { notIn: excludeIds },
     },
-    take: 30, // ← プールサイズ（調整可）
+    take: 30,
   });
 
-  // 🔥 Fisher-Yates shuffle
   const shuffled = pool.sort(() => Math.random() - 0.5);
 
   const randomPosts = shuffled.slice(0, 5 - recommended.length);

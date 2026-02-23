@@ -2,8 +2,8 @@ import { prisma } from "@/lib/prisma";
 import { NextResponse, NextRequest } from "next/server";
 import { getVisitorId } from "@/lib/visitor";
 
-export const revalidate = 0; // ◀ サーバサイドのキャッシュを無効化する設定
-export const dynamic = "force-dynamic"; // ◀ 〃
+export const revalidate = 0;
+export const dynamic = "force-dynamic"; 
 
 export const GET = async (
   req: NextRequest,
@@ -11,11 +11,8 @@ export const GET = async (
 ) => {
   try {
     const { id: postId } = await params;
-    const visitorId = await getVisitorId(); // 🔥 ユーザー識別
+    const visitorId = await getVisitorId();
 
-    /* ---------------------------
-       🔥 初回閲覧だけ記録
-    ----------------------------*/
     try {
       await prisma.postView.create({
         data: {
@@ -24,7 +21,6 @@ export const GET = async (
         },
       });
 
-      // 作れた＝初回閲覧 → カウント増やす
       await prisma.post.update({
         where: { id: postId },
         data: {
@@ -32,12 +28,8 @@ export const GET = async (
         },
       });
     } catch {
-      // 既に閲覧済み → 何もしない
     }
 
-    /* ---------------------------
-       記事取得
-    ----------------------------*/
     const post = await prisma.post.findUnique({
       where: { id: postId },
       select: {

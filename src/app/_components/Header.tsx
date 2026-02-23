@@ -17,8 +17,6 @@ const Header: React.FC = () => {
 
   const [isSuggestionOpen, setIsSuggestionOpen] = useState(false);
 
-
-  // ✅ hydration 対策
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -41,10 +39,8 @@ const Header: React.FC = () => {
           "text-lg font-bold text-white"
         )}
       >
-        {/* 基準コンテナ */}
         <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center">
 
-          {/* 左：タイトル */}
           <div className="sm:flex-1 text-center sm:text-left">
             <Link href="/">
               <FontAwesomeIcon icon={faFish} className="mr-1" />
@@ -52,7 +48,6 @@ const Header: React.FC = () => {
             </Link>
           </div>
 
-          {/* 中央：Login/Logout */}
           <div className="sm:flex-1 text-center">
             {!isLoading &&
               (session ? (
@@ -66,7 +61,6 @@ const Header: React.FC = () => {
               ))}
           </div>
 
-          {/* 右①：目安箱 */}
           <div className="sm:flex-1 text-center">
             <button
               onClick={() => setIsSuggestionOpen(true)}
@@ -76,7 +70,6 @@ const Header: React.FC = () => {
             </button>
           </div>
 
-          {/* 右②：このサイトについて */}
           <div className="sm:flex-1 text-center sm:text-right">
             <Link href="/about">このサイトについて</Link>
           </div>

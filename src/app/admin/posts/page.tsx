@@ -37,7 +37,6 @@ const AdminPostsPage = () => {
   const [sortKey, setSortKey] = useState<SortKey>("new");
   const [checkKey, setCheckKey] = useState<checkKey>("name")
 
-  // ===== 投稿一覧取得 =====
   useEffect(() => {
     if (authLoading) return;
 
@@ -72,9 +71,7 @@ const AdminPostsPage = () => {
     fetchPosts();
   }, [token, authLoading]);
 
-  // ===== 削除 =====
   const handleDelete = async (postId: string, title: string) => {
-  // ===== ここ追加 =====
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -83,7 +80,6 @@ const AdminPostsPage = () => {
     alert("ゲストユーザーは削除できません");
     return;
   }
-  // =====================
 
   if (!window.confirm(`「${title}」を削除しますか？`)) return;
   if (!token) return;
@@ -103,8 +99,6 @@ const AdminPostsPage = () => {
   setPosts((prev) => prev.filter((p) => p.id !== postId));
 };
 
-
-  // ===== 検索 =====
   const filteredPosts = useMemo(() => {
     const keyword = searchTerm.toLowerCase();
 
@@ -130,7 +124,6 @@ const AdminPostsPage = () => {
     }
   }, [posts, searchTerm,checkKey]);
 
-  // ===== 並び替え =====
   const sortedPosts = useMemo(() => {
     const copy = [...filteredPosts];
 
@@ -156,7 +149,6 @@ const AdminPostsPage = () => {
     }
   }, [filteredPosts, sortKey]);
 
-  // ===== ページネーション =====
   const totalPages = Math.ceil(sortedPosts.length / ITEMS_PER_PAGE);
 
   const paginatedPosts = useMemo(() => {
@@ -173,7 +165,6 @@ const AdminPostsPage = () => {
 
   return (
   <main className="space-y-6 px-4 sm:px-0">
-    {/* ===== リンクボタン ===== */}
     <header className="flex flex-col sm:flex-row gap-2">
       <Link
         href="/admin/posts/new"
@@ -192,7 +183,6 @@ const AdminPostsPage = () => {
 
     <h1 className="text-2xl font-bold">投稿管理</h1>
 
-    {/* ===== 検索・ソート ===== */}
     <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2 sm:items-center">
       <input
         value={searchTerm}
@@ -220,7 +210,6 @@ const AdminPostsPage = () => {
         <option value="title">≡名前順</option>
       </select>
 
-      {/* PCのみ表示 */}
       <div className="hidden sm:flex gap-2">
         <button
           onClick={() => setViewMode("list")}
@@ -242,7 +231,6 @@ const AdminPostsPage = () => {
       </div>
     </div>
 
-    {/* ===== 記事一覧 ===== */}
     <ul
       className={
         viewMode === "grid"
@@ -293,7 +281,6 @@ const AdminPostsPage = () => {
       ))}
     </ul>
 
-    {/* ===== ページネーション ===== */}
     {totalPages > 1 && (
       <div className="flex gap-2 flex-wrap justify-center sm:justify-start">
         {Array.from({ length: totalPages }).map((_, i) => {

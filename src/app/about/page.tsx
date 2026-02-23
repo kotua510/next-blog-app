@@ -4,17 +4,13 @@ import Image from "next/image";
 const Page: React.FC = () => {
   return (
   <main className="px-4 md:px-6">
-    {/* ===== 概要（常に最上部） ===== */}
     <h1 className="mb-8 md:mb-10 text-center text-2xl font-bold">
       このサイトについての説明
     </h1>
 
-    {/* 左寄せコンテンツ */}
     <div className="max-w-5xl mx-auto">
-      {/* ===== 製作者エリア ===== */}
       <div className="flex flex-col gap-8 md:flex-row md:items-start">
         
-        {/* ================= 作成者（スマホ2番目 / PC左） ================= */}
         <div className="order-2 md:order-1 flex flex-col items-start">
           <h2 className="mb-3 text-xl font-semibold">
             製作者ヾ(•ω•`)o : コツァ
@@ -35,7 +31,6 @@ const Page: React.FC = () => {
           </p>
         </div>
 
-        {/* ================= サイト説明（スマホ3番目 / PC右） ================= */}
         <div className="order-3 md:order-2 flex-1">
           <h3 className="mb-3 text-xl font-semibold">
             このブログサイトについて
@@ -51,7 +46,6 @@ const Page: React.FC = () => {
 
       <div className="my-10" />
 
-      {/* ================= リンク（スマホ4番目） ================= */}
       <h2 className="mb-3 text-xl font-semibold text-center">
         各種サイト🔗
       </h2>

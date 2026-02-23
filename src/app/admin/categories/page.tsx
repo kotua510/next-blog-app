@@ -24,7 +24,6 @@ const AdminCategoriesPage = () => {
   const [sortKey, setSortKey] = useState<SortKey>("new");
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
 
-  // ===== カテゴリ取得 =====
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -48,7 +47,6 @@ const AdminCategoriesPage = () => {
     fetchCategories();
   }, []);
 
-  // ===== 削除（Postsと同じ方式）=====
   const handleDelete = async (categoryId: string, name: string) => {
   const {
     data: { session },
@@ -64,7 +62,7 @@ const AdminCategoriesPage = () => {
   const res = await fetch(`/api/admin/categories/${categoryId}`, {
     method: "DELETE",
     headers: {
-      Authorization: `Bearer ${session.access_token}`, // ★最重要
+      Authorization: `Bearer ${session.access_token}`,
     },
   });
 
@@ -80,7 +78,6 @@ const AdminCategoriesPage = () => {
   );
 };
 
-  // ===== 検索 =====
   const filteredCategories = useMemo(() => {
     const keyword = searchTerm.toLowerCase();
 
@@ -91,7 +88,6 @@ const AdminCategoriesPage = () => {
     );
   }, [categories, searchTerm]);
 
-  // ===== 並び替え =====
   const sortedCategories = useMemo(() => {
     const copy = [...filteredCategories];
 
@@ -117,7 +113,6 @@ const AdminCategoriesPage = () => {
     }
   }, [filteredCategories, sortKey]);
 
-  // ===== ページネーション =====
   const totalPages = Math.ceil(sortedCategories.length / ITEMS_PER_PAGE);
 
   const paginatedCategories = useMemo(() => {
@@ -134,7 +129,6 @@ const AdminCategoriesPage = () => {
 
   return (
   <main className="space-y-6 px-4  mx-auto overflow-x-hidden">
-    {/* ===== スマホ：リンク最上部 ===== */}
     <div className="flex flex-col gap-2 sm:hidden">
       <Link
         href="/admin"
@@ -148,13 +142,11 @@ const AdminCategoriesPage = () => {
       >
         カテゴリ新規作成
       </Link>
-    </div>
-
-    {/* ===== ヘッダー ===== */}
+      </div>
+      
     <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between min-w-0">
       <h1 className="text-2xl font-bold break-words">カテゴリ管理</h1>
 
-      {/* PCのみ */}
       <div className="hidden sm:flex gap-2 flex-wrap">
         <Link
           href="/admin"
@@ -171,7 +163,6 @@ const AdminCategoriesPage = () => {
       </div>
     </header>
 
-    {/* ===== 検索・ソート・表示切替 ===== */}
     <div className="flex flex-wrap gap-2 items-center min-w-0">
       <input
         value={searchTerm}
@@ -190,7 +181,6 @@ const AdminCategoriesPage = () => {
         <option value="name">≡名前順</option>
       </select>
 
-      {/* PCのみ：カラム切替 */}
       <div className="hidden sm:flex gap-2 ml-auto flex-wrap">
         <button
           onClick={() => setViewMode("list")}
@@ -212,7 +202,6 @@ const AdminCategoriesPage = () => {
       </div>
     </div>
 
-    {/* ===== 一覧 ===== */}
     <ul
       className={
         viewMode === "grid"
@@ -250,7 +239,6 @@ const AdminCategoriesPage = () => {
       ))}
     </ul>
 
-    {/* ===== ページネーション ===== */}
     {totalPages > 1 && (
       <div className="flex gap-2 flex-wrap">
         {Array.from({ length: totalPages }).map((_, i) => {

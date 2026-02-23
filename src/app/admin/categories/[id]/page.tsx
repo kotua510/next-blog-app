@@ -11,7 +11,7 @@ import { Category } from "@/app/_types/Category";
 import Link from "next/link";
 import { supabase } from "@/utils/supabase";
 
-// ===== APIレスポンス型 =====
+// APIレスポンス型
 type CategoryApiResponse = {
   id: string;
   name: string;
@@ -21,7 +21,6 @@ type CategoryApiResponse = {
 
 type SortKey = "new" | "old" | "name";
 
-// ===== カテゴリ編集・削除ページ =====
 const Page: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -41,7 +40,6 @@ const Page: React.FC = () => {
 
   const [categories, setCategories] = useState<Category[] | null>(null);
 
-  // ===== カテゴリ一覧取得 =====
   const fetchCategories = async () => {
     try {
       setIsLoading(true);
@@ -91,7 +89,6 @@ const Page: React.FC = () => {
     }
   }, [categories, id]);
 
-  // ===== バリデーション =====
   const isValidCategoryName = (name: string): string => {
     if (name.length < 2 || name.length > 16) {
       return "2文字以上16文字以内で入力してください。";
@@ -107,9 +104,6 @@ const Page: React.FC = () => {
     setNewCategoryName(e.target.value);
   };
 
-  // =============================
-  // 🔧 名前変更（Bearer付き）
-  // =============================
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
@@ -122,7 +116,6 @@ const Page: React.FC = () => {
       return;
     }
 
-    // ⭐ トークン取得
     const {
       data: { session },
     } = await supabase.auth.getSession();
@@ -142,7 +135,7 @@ const Page: React.FC = () => {
         cache: "no-store",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`, // ⭐ 追加
+          Authorization: `Bearer ${accessToken}`,
         },
         body: JSON.stringify({ name: newCategoryName }),
       });
@@ -167,9 +160,6 @@ const Page: React.FC = () => {
     }
   };
 
-  // =============================
-  // 🔧 削除（Bearer付き）
-  // =============================
   const handleDelete = async () => {
     const {
       data: { user },
@@ -188,7 +178,6 @@ const Page: React.FC = () => {
       return;
     }
 
-    // ⭐ トークン取得
     const {
       data: { session },
     } = await supabase.auth.getSession();
@@ -207,7 +196,7 @@ const Page: React.FC = () => {
         method: "DELETE",
         cache: "no-store",
         headers: {
-          Authorization: `Bearer ${accessToken}`, // ⭐ 追加
+          Authorization: `Bearer ${accessToken}`, 
         },
       });
 
@@ -229,7 +218,6 @@ const Page: React.FC = () => {
     }
   };
 
-  // ===== 検索 =====
   const filteredCategories = useMemo(() => {
     if (!categories) return [];
     return categories.filter((cat) =>
@@ -237,7 +225,6 @@ const Page: React.FC = () => {
     );
   }, [categories, searchTerm]);
 
-  // ===== ソート =====
   const sortedCategories = useMemo(() => {
     const copy = [...filteredCategories];
 
@@ -263,7 +250,6 @@ const Page: React.FC = () => {
     }
   }, [filteredCategories, sortKey]);
 
-  // ===== 状態別表示 =====
   if (isLoading) {
     return (
       <div className="text-gray-500">
@@ -285,10 +271,9 @@ const Page: React.FC = () => {
     );
   }
 
-  // ===== 表示 =====
   return (
   <main className="space-y-6 px-4 sm:px-0 max-w-3xl mx-auto">
-    {/* ===== スマホ：リンク最上部 ===== */}
+
     <div className="flex flex-col gap-2 sm:hidden">
       <Link
         href="/admin"
@@ -304,13 +289,11 @@ const Page: React.FC = () => {
       </Link>
     </div>
 
-    {/* ===== ヘッダー ===== */}
     <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="mb-4 text-3xl font-bold">
         カテゴリの編集・削除
       </div>
 
-      {/* PCのみ */}
       <div className="hidden sm:flex gap-2">
         <Link
           href="/admin"
@@ -363,7 +346,6 @@ const Page: React.FC = () => {
         </div>
       </div>
 
-      {/* ===== ボタン ===== */}
       <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
         <button
           type="submit"
@@ -391,7 +373,6 @@ const Page: React.FC = () => {
       既存カテゴリ一覧📜
     </div>
 
-    {/* ===== 検索・ソート ===== */}
     <div className="mb-3 flex flex-col sm:flex-row sm:flex-wrap gap-2">
       <input
         type="text"

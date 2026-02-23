@@ -60,6 +60,7 @@ model Comment {
   likes     CommentLike[]
 }
 
+//目安箱
 model Suggestion {
   id        String   @id @default(uuid())
   title     String
@@ -90,6 +91,7 @@ model CommentLike {
   @@unique([commentId, visitorId])
 }
 
+//閲覧数
 model PostView {
   id        String   @id @default(uuid())
   postId    String

@@ -1,13 +1,12 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-const NG_WORDS = ["ばか", "死ね", "NGワード1","NGワード2"]; // ← 好きに追加
+const NG_WORDS = ["ばか", "死ね", "NGワード1","NGワード2"];
 
 function containsNgWord(text: string) {
   return NG_WORDS.some((w) => text.includes(w));
 }
 
-// ================= POST（投稿） =================
 export async function POST(req: Request) {
   try {
     const body = await req.json();
@@ -15,7 +14,6 @@ export async function POST(req: Request) {
     const title = body.title?.trim();
     const content = body.content?.trim();
 
-    // 🔒 空チェック
     if (!title) {
       return NextResponse.json(
         { message: "タイトルが空です" },
@@ -30,7 +28,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // 🔒 NGワードチェック（タイトル＋本文）
     if (containsNgWord(title) || containsNgWord(content)) {
       return NextResponse.json(
         { message: "禁則文字が含まれています" },
@@ -42,7 +39,6 @@ export async function POST(req: Request) {
       data: {
         title,
         content,
-        // isHandled は default(false) に任せる
       },
     });
 
@@ -56,7 +52,6 @@ export async function POST(req: Request) {
   }
 }
 
-// ================= GET（一覧） =================
 export async function GET() {
   try {
     const list = await prisma.suggestion.findMany({
@@ -73,7 +68,6 @@ export async function GET() {
   }
 }
 
-// ================= PATCH（対応状態更新） =================
 export async function PATCH(req: Request) {
   try {
     const body = await req.json();
@@ -101,7 +95,6 @@ export async function PATCH(req: Request) {
   }
 }
 
-// ================= DELETE（対応済み一括削除） =================
 export async function DELETE() {
   try {
     const result = await prisma.suggestion.deleteMany({

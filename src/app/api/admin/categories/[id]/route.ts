@@ -13,7 +13,6 @@ type RequestBody = {
   name: string;
 };
 
-/** 共通：Supabase 認証 */
 const authenticate = async (req: NextRequest) => {
   const authHeader = req.headers.get("Authorization");
 
@@ -29,21 +28,17 @@ const authenticate = async (req: NextRequest) => {
   return data.user;
 };
 
-/* =========================
-   PUT: カテゴリ名変更
-========================= */
 export const PUT = async (
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) => {
-  // 🔐 認証チェック
   const user = await authenticate(req);
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
-    const { id } = await params; // ← ★ここが重要
+    const { id } = await params;
     const { name }: RequestBody = await req.json();
 
     if (!name || name.trim() === "") {
@@ -54,7 +49,7 @@ export const PUT = async (
     }
 
     const category: Category = await prisma.category.update({
-      where: { id }, // ← params.id ではない
+      where: { id }, 
       data: { name },
     });
 
@@ -69,21 +64,17 @@ export const PUT = async (
 };
 
 
-/* =========================
-   DELETE: カテゴリ削除
-========================= */
 export const DELETE = async (
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) => {
-  // 🔐 認証チェック
   const user = await authenticate(req);
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
-    const { id } = await params; // ← ★ここ
+    const { id } = await params;
 
     const category: Category = await prisma.category.delete({
       where: { id },

@@ -16,8 +16,6 @@ export const GET = async (req: NextRequest) => {
 
         viewCount: true,
         resultUrl: true,
-
-        // ⭐ そのまま維持
         categories: {
           select: {
             category: {
@@ -29,7 +27,6 @@ export const GET = async (req: NextRequest) => {
           },
         },
 
-        // ⭐ ここを追加！！
         _count: {
           select: {
             likes: true,
@@ -45,10 +42,8 @@ export const GET = async (req: NextRequest) => {
     const formattedPosts = posts.map((post) => ({
       ...post,
 
-      // 既存処理
       categories: post.categories.map((pc) => pc.category),
 
-      // ⭐ ここを追加！！
       likeCount: post._count.likes,
       commentCount: post._count.comments,
       resultUrl: post.resultUrl,

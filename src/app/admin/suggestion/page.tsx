@@ -24,7 +24,6 @@ const Page: React.FC = () => {
       .finally(() => setLoading(false));
   }, []);
 
-  // ✅ 表示用フィルタ
   const filteredSuggestions = useMemo(() => {
     if (filter === "handled") {
       return suggestions.filter((s) => s.isHandled);
@@ -51,7 +50,6 @@ const Page: React.FC = () => {
       return;
     }
 
-    // ✅ 楽観更新
     setSuggestions((prev) =>
       prev.map((s) =>
         s.id === id ? { ...s, isHandled: !current } : s
@@ -75,7 +73,6 @@ const Page: React.FC = () => {
       return;
     }
 
-    // ✅ state からも除去
     setSuggestions((prev) => prev.filter((s) => !s.isHandled));
   } catch (e) {
     alert("通信エラー");
@@ -96,8 +93,6 @@ const Page: React.FC = () => {
     対応済みを一括削除🗑️
   </button>
 </div>
-
-      {/* ✅ トグル */}
       <div className="flex gap-2">
         <button
           onClick={() => setFilter("all")}
@@ -141,7 +136,6 @@ const Page: React.FC = () => {
             key={s.id}
             className="border-2 border-slate-300 rounded-xl p-5 bg-white shadow-sm"
           >
-            {/* タイトル＋対応状態 */}
             <div className="flex justify-between items-start mb-2">
               <h2 className="font-bold text-lg">{s.title}</h2>
 
@@ -157,12 +151,10 @@ const Page: React.FC = () => {
 </button>
             </div>
 
-            {/* 日付 */}
             <div className="text-xs text-gray-500 mb-3">
               {new Date(s.createdAt).toLocaleString()}
             </div>
 
-            {/* 本文 */}
             <div className="whitespace-pre-wrap text-gray-800">
               {s.content}
             </div>

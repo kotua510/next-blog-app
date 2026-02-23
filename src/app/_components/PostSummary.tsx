@@ -44,7 +44,6 @@ const PostSummary: React.FC<Props> = ({ post }) => {
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4 sm:gap-5">
-        {/* ===== 左 ===== */}
         <div className="flex-1 min-w-0 break-words">
           <Link
             href={`/posts/${post.id}`}
@@ -59,9 +58,7 @@ const PostSummary: React.FC<Props> = ({ post }) => {
           />
         </div>
 
-        {/* ===== 右 ===== */}
         <div className="flex sm:w-64 flex-col sm:items-end sm:text-right">
-          {/* カテゴリ */}
           <div className="flex flex-wrap justify-start sm:justify-end gap-2 mb-3">
             {post.categories.map((c) => (
               <div
@@ -81,7 +78,6 @@ const PostSummary: React.FC<Props> = ({ post }) => {
             ))}
           </div>
 
-          {/* アクション */}
           <div className="flex items-center gap-4 text-gray-600">
             <button
               onClick={handleSummarize}
@@ -110,7 +106,7 @@ const PostSummary: React.FC<Props> = ({ post }) => {
         </div>
       </div>
 
-      {/* ===== モーダル ===== */}
+      {/* モーダル */}
       {isOpen && (
         <div
           className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"

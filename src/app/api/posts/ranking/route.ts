@@ -15,10 +15,10 @@ export const GET = async () => {
         },
       },
       orderBy: [
-        { viewCount: "desc" },   // 閲覧数優先
-        { likes: { _count: "desc" } }, // 次にいいね
+        { viewCount: "desc" },
+        { likes: { _count: "desc" } },
       ],
-      take: 5, // 上位5件
+      take: 5,
     });
 
     const formatted = posts.map((p) => ({

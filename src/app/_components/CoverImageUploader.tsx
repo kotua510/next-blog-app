@@ -34,7 +34,7 @@ export const CoverImageUploader = ({ onUploaded }: Props) => {
       return;
     }
 
-    // 親に key を渡す
+    // 親にkeyを渡す
     onUploaded(data.path);
   };
 

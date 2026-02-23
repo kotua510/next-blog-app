@@ -3,14 +3,13 @@ import { NextResponse, NextRequest } from "next/server";
 import { Category } from "@/generated/prisma/client";
 import { supabase } from "@/utils/supabase";
 
-export const revalidate = 0; // ◀ サーバサイドのキャッシュを無効化する設定
-export const dynamic = "force-dynamic"; // ◀ 〃
+export const revalidate = 0;
+export const dynamic = "force-dynamic";
 
 type RequestBody = {
   name: string;
 };
 
-// 共通：認証チェック
 const authenticate = async (req: NextRequest) => {
   const authHeader = req.headers.get("Authorization");
 
@@ -26,9 +25,6 @@ const authenticate = async (req: NextRequest) => {
   return data.user;
 };
 
-/* ==========================
-   GET：カテゴリ一覧取得
-   ========================== */
 export const GET = async () => {
   try {
     const categories = await prisma.category.findMany({
@@ -45,11 +41,7 @@ export const GET = async () => {
   }
 };
 
-/* ==========================
-   POST：カテゴリ作成
-   ========================== */
 export const POST = async (req: NextRequest) => {
-  // 🔐 認証チェック
   const user = await authenticate(req);
   if (!user) {
     return NextResponse.json(

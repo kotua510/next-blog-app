@@ -26,7 +26,6 @@ type EditPostResponse = {
   }[];
 };
 
-/* 🆕 コメント型 */
 type Comment = {
   id: string;
   content: string;
@@ -63,7 +62,6 @@ const EditPostPage = () => {
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [storedImageUrl, setStoredImageUrl] = useState<string | null>(null);
 
-  /* 🆕 コメント管理用state */
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentsLoading, setCommentsLoading] = useState(true);
 
@@ -71,7 +69,7 @@ const EditPostPage = () => {
   resultUrl.length > 0 &&
   !/^https?:\/\//i.test(resultUrl);
 
-  /* ---------------- 初期データ取得 ---------------- */
+  // 初期データ取得
   useEffect(() => {
     if (authLoading || !token) return;
 
@@ -114,7 +112,6 @@ const EditPostPage = () => {
     fetchData();
   }, [id, token, authLoading, router]);
 
-  /* 🆕 コメント取得 */
   useEffect(() => {
     if (!id) return;
 
@@ -135,7 +132,6 @@ const EditPostPage = () => {
     fetchComments();
   }, [id]);
 
-  /* ---------------- カテゴリ検索 ---------------- */
   const filteredCategories = useMemo(() => {
     return allCategories.filter((cat) =>
       cat.name.toLowerCase().includes(categorySearch.toLowerCase())
@@ -150,7 +146,6 @@ const EditPostPage = () => {
     );
   };
 
-  /* ---------------- 画像アップロード ---------------- */
   const handleImageUpload = async (file: File) => {
     if (!session) {
       alert("ログイン情報がありません");
@@ -179,7 +174,6 @@ const EditPostPage = () => {
     };
   }, [imagePreviewUrl]);
 
-  /* ---------------- 更新 ---------------- */
   const handleUpdate = async () => {
   const {
     data: { user },
@@ -216,7 +210,6 @@ const EditPostPage = () => {
 };
 
 
-  /* ---------------- 削除 ---------------- */
   const handleDelete = async () => {
   const {
     data: { user },
@@ -243,7 +236,6 @@ const EditPostPage = () => {
 };
 
 
-  /* 🆕 コメント削除 */
   const handleCommentDelete = async (commentId: string) => {
   const {
     data: { user },
@@ -278,7 +270,6 @@ const EditPostPage = () => {
 
   return (
   <main className="space-y-6 max-w-4xl mx-auto px-4">
-    {/* ===== スマホ：リンク最上部 ===== */}
     <div className="flex flex-col gap-2 sm:hidden">
       <Link href="/admin/posts" className="px-3 py-2 bg-gray-200 rounded text-center">
         投稿記事一覧
@@ -288,11 +279,9 @@ const EditPostPage = () => {
       </Link>
     </div>
 
-    {/* ===== ヘッダー ===== */}
     <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <h1 className="text-xl font-bold">投稿編集</h1>
 
-      {/* PCのみ */}
       <div className="hidden sm:flex gap-2">
         <Link href="/admin/posts" className="px-3 py-2 bg-gray-200 rounded">
           投稿記事一覧
@@ -409,12 +398,10 @@ const EditPostPage = () => {
       )}
     </div>
 
-    {/* ===== カテゴリ ===== */}
     <div>
       <div className="flex items-center gap-2 mb-2">
         <label className="font-semibold">カテゴリ</label>
 
-        {/* PCのみ列変更 */}
         <div className="ml-auto hidden sm:flex gap-2">
           <button
             type="button"
@@ -449,7 +436,6 @@ const EditPostPage = () => {
         onChange={(e) => setCategorySearch(e.target.value)}
       />
 
-      {/* ✅ スマホ2列固定 */}
       <div
         className={`grid gap-2 grid-cols-2 ${
           categoryView === "col3" ? "sm:grid-cols-3" : ""
@@ -502,7 +488,6 @@ const EditPostPage = () => {
       </button>
     </div>
 
-    {/* ===== コメント管理 ===== */}
     <div className="border-t pt-6">
       <h2 className="text-lg font-bold mb-3">コメント一覧💬</h2>
 

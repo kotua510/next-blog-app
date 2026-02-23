@@ -37,14 +37,12 @@ const Page: React.FC = () => {
 
   const [recommended, setRecommended] = useState<RecommendedPost[]>([]);
 
-  // ================= 記事取得 =================
   useEffect(() => {
     fetch(`/api/posts/${id}`)
       .then((r) => r.json())
       .then((d) => setPost(d));
   }, [id]);
 
-  // ================= 記事いいね状態取得 =================
   useEffect(() => {
     fetch(`/api/posts/${id}/like`)
       .then((r) => r.json())
@@ -54,14 +52,12 @@ const Page: React.FC = () => {
       });
   }, [id]);
 
-  // ================= コメント取得 =================
   useEffect(() => {
     fetch(`/api/posts/${id}/comments`)
       .then((r) => r.json())
       .then((d) => setComments(d));
   }, [id]);
 
-  // ================= おすすめ記事取得 =================
 useEffect(() => {
   fetch(`/api/posts/${id}/recommend`)
     .then((r) => r.json())
@@ -69,7 +65,6 @@ useEffect(() => {
     .catch(() => setRecommended([]));
 }, [id]);
 
-  // ================= 画像 =================
   useEffect(() => {
     if (!post?.coverImageKey) return;
     const { data } = supabase.storage
@@ -82,14 +77,12 @@ useEffect(() => {
 
   const safeHTML = DOMPurify.sanitize(post.content);
 
-  // ================= サムネURL取得 =================
 const getImageUrl = (key?: string | null) => {
   if (!key) return null;
   const { data } = supabase.storage.from("cover-image").getPublicUrl(key);
   return data.publicUrl;
 };
 
-  // ================= 記事いいねトグル =================
   const togglePostLike = async () => {
     if (likeLoading) return;
     setLikeLoading(true);
@@ -109,7 +102,6 @@ const getImageUrl = (key?: string | null) => {
     }
   };
 
-  // ================= コメント投稿 =================
   const NG_WORDS = [
   "死ね",
   "ばか",
@@ -125,15 +117,13 @@ const containsNgWord = (text: string) => {
   return NG_WORDS.some((word) => text.includes(word));
 };
 
-// ================= コメント投稿 =================
 const submitComment = async () => {
   const trimmed = newComment.trim();
   if (!trimmed) return;
 
-  // 🚫 禁則チェック
   if (containsNgWord(trimmed)) {
     alert("禁止されている単語が含まれています");
-    return; // ← ここで完全停止（DB送信されない）
+    return;
   }
 
   const res = await fetch(`/api/posts/${id}/comments`, {
@@ -152,7 +142,6 @@ const submitComment = async () => {
   setNewComment("");
 };
 
-  // ================= コメントいいねトグル =================
   const toggleCommentLike = async (commentId: string) => {
     setComments((prev) =>
       prev.map((c) =>
@@ -208,7 +197,6 @@ const submitComment = async () => {
     }
   };
 
-  // ================= おすすめ画像 =================
 const RecommendedImage: React.FC<{
   imageKey: string;
   title: string;
@@ -242,12 +230,10 @@ const RecommendedImage: React.FC<{
 
   return (
   <main className="w-full max-w-4xl mx-auto px-4 py-6 space-y-6">
-    {/* タイトル */}
     <h1 className="text-2xl md:text-4xl font-bold break-words">
       {post.title}
     </h1>
 
-    {/* カテゴリ */}
     <div className="flex gap-2 flex-wrap">
       {post.categories.map((c) => (
         <span
@@ -259,7 +245,6 @@ const RecommendedImage: React.FC<{
       ))}
     </div>
 
-    {/* ❤️ 記事いいね */}
     <button
       onClick={togglePostLike}
       disabled={likeLoading}
@@ -270,7 +255,6 @@ const RecommendedImage: React.FC<{
       {liked ? "❤️" : "🤍"} {postLikes}
     </button>
 
-    {/* 🔗 成果物URL */}
     {post.resultUrl && (
       <div className="my-4 text-base md:text-xl">
         <span className="font-semibold">成果物はこちら : </span>
@@ -285,7 +269,6 @@ const RecommendedImage: React.FC<{
       </div>
     )}
 
-    {/* 画像 */}
     {coverImageUrl && (
       <Image
         src={coverImageUrl}
@@ -296,13 +279,11 @@ const RecommendedImage: React.FC<{
       />
     )}
 
-    {/* 本文（日本語崩れ対策入り） */}
     <div
       className="prose max-w-none text-[18px] md:text-[22px] leading-relaxed break-words overflow-wrap-anywhere"
       dangerouslySetInnerHTML={{ __html: safeHTML }}
     />
 
-    {/* ================= おすすめ記事 ================= */}
     {recommended.length > 0 && (
       <div className="border-t pt-6 space-y-3">
         <h2 className="text-xl md:text-2xl font-bold">
@@ -336,7 +317,6 @@ const RecommendedImage: React.FC<{
       </div>
     )}
 
-    {/* ================= コメント ================= */}
     <div className="border-t pt-6 space-y-4">
       <h2 className="text-xl md:text-2xl font-bold">コメント💬</h2>
 
@@ -354,7 +334,6 @@ const RecommendedImage: React.FC<{
         送信
       </button>
 
-      {/* コメント一覧 */}
       <div className="space-y-3">
         {comments.map((c) => (
           <div key={c.id} className="border p-3 rounded">

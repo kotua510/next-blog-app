@@ -25,7 +25,6 @@ const Page: React.FC = () => {
     setEmailError("");
   };
 
-  // 🔐 通常ログイン
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -52,7 +51,6 @@ const Page: React.FC = () => {
     }
   };
 
-  // 👤 ゲストログイン
   const handleGuestLogin = async () => {
     setIsSubmitting(true);
     setLoginError("");
@@ -78,7 +76,6 @@ const Page: React.FC = () => {
       <div className="mb-2 text-2xl font-bold">ログイン</div>
       <ValidationAlert msg={loginError} />
 
-      {/* 通常ログインフォーム */}
       <form
         onSubmit={handleSubmit}
         className={twMerge("mb-4 space-y-4", isSubmitting && "opacity-50")}
@@ -134,7 +131,6 @@ const Page: React.FC = () => {
         </div>
       </form>
 
-      {/* 👤 ゲストログインボタン */}
       <div className="text-center">
         <button
           onClick={handleGuestLogin}

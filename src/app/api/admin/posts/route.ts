@@ -5,9 +5,6 @@ import { supabase } from "@/utils/supabase";
 export const revalidate = 0;
 export const dynamic = "force-dynamic";
 
-/* ==========================
-   リクエストBody型
-   ========================== */
 type RequestBody = {
   title: string;
   content: string;
@@ -17,9 +14,6 @@ type RequestBody = {
   resultUrl?: string;
 };
 
-/* ==========================
-   投稿一覧取得（GET）
-   ========================== */
 export const GET = async (req: NextRequest) => {
   const authHeader = req.headers.get("Authorization");
 
@@ -48,7 +42,7 @@ export const GET = async (req: NextRequest) => {
         id: true,
         title: true,
         createdAt: true,
-        resultUrl: true, // ← そのままでOK
+        resultUrl: true,
         categories: {
           select: {
             category: {
@@ -77,9 +71,6 @@ export const GET = async (req: NextRequest) => {
   }
 };
 
-/* ==========================
-   投稿作成（POST）
-   ========================== */
 export const POST = async (req: NextRequest) => {
   const authHeader = req.headers.get("Authorization");
 
@@ -112,7 +103,6 @@ export const POST = async (req: NextRequest) => {
       resultUrl,
     } = body;
 
-    /* ===== resultUrl 正規化 ===== */
     const normalizedResultUrl =
       resultUrl && resultUrl.trim() !== "" ? resultUrl : undefined;
     
@@ -121,8 +111,6 @@ export const POST = async (req: NextRequest) => {
     ? summary.trim().slice(0, 150)
     : undefined;
 
-
-    /* ===== カテゴリ存在チェック ===== */
     const categories = await prisma.category.findMany({
       where: { id: { in: categoryIds } },
     });
@@ -134,18 +122,16 @@ export const POST = async (req: NextRequest) => {
       );
     }
 
-    /* ===== 投稿作成 ===== */
     const post = await prisma.post.create({
       data: {
         title,
         content,
         ...(coverImageKey && { coverImageKey }),
-        ...(normalizedResultUrl && { resultUrl: normalizedResultUrl }), // ← 追加
+        ...(normalizedResultUrl && { resultUrl: normalizedResultUrl }),
         ...(normalizedSummary && { summary: normalizedSummary }),
       },
     });
 
-    /* ===== 中間テーブル登録 ===== */
     await prisma.postCategory.createMany({
       data: categoryIds.map((categoryId) => ({
         postId: post.id,
