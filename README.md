@@ -54,7 +54,7 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 1.各ページについての説明<br>
 - 閲覧用記事一覧ページ<br>
 このページでは投稿記事が一覧で確認できます。<br>
-<img src="README_image/n記事一覧.png" alt="説明" style="max-width: 100px;"><br>
+<img src="README_image/n記事一覧.png" alt="説明" width="200"><br>
 
 - 記事詳細ページ<br>
 このページでは記事の本文及び内容を楽しむことができます。<br>
