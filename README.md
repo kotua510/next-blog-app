@@ -58,46 +58,46 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 - 記事詳細ページ<br>
 このページでは記事の本文及び内容を楽しむことができます。<br>
-<img src="README_image/n記事詳細.png" alt="説明"><br>
+<img src="README_image/n記事詳細.png" alt="説明" width="550"><br>
 
 - 管理投稿記事一覧ページ<br>
 このページでは投稿記事の一覧に加えて、削除や編集ページへの遷移などもできます。<br>
-<img src="README_image/n記事管理一覧.png" alt="説明"><br>
+<img src="README_image/n記事管理一覧.png" alt="説明" width="550"><br>
 - 投稿記事新規作成ページ<br>
 このページでは新たに記事を作成することができます。<br>
-<img src="README_image/n記事新規作成.png" alt="説明"><br>
+<img src="README_image/n記事新規作成.png" alt="説明" width="550"><br>
 - 記事編集ページ<br>
 このページでは既存記事の編集をすることができます。<br>
-<img src="README_image/n記事編集.png" alt="説明"><br>
+<img src="README_image/n記事編集.png" alt="説明" width="550"><br>
 - 管理カテゴリページ<br>
 このページではカテゴリを一覧で確認することが可能で、直接削除や編集ページへの遷移が可能です。<br>
-<img src="README_image/nカテゴリ一覧管理.png" alt="説明"><br>
+<img src="README_image/nカテゴリ一覧管理.png" alt="説明" width="550"><br>
 - カテゴリ新規作成ページ<br>
 このページでは新たにカテゴリを作成することが可能です。<br>
-<img src="README_image/nカテゴリ新規作成.png" alt="説明"><br>
+<img src="README_image/nカテゴリ新規作成.png" alt="説明" width="550"><br>
 - カテゴリ編集ページ<br>
 このページでは既存のカテゴリの編集をすることができます。<br>
-<img src="README_image/nカテゴリ編集.png" alt="説明"><br>
+<img src="README_image/nカテゴリ編集.png" alt="説明" width="550"><br>
 - 管理機能一覧ページ<br>
 このページでは記事やカテゴリの新規作成、管理用一覧ページ、目安箱のページなど主要な管理用ページにURL入力不要で遷移することができます。<br>
-<img src="README_image/n管理一覧.png" alt="説明"><br>
+<img src="README_image/n管理一覧.png" alt="説明" width="550"><br>
 - ヘッダー<br>
 ヘッダーはどのページを閲覧していても利用したいページだと考えられる
 サイトの説明ページやログインページ、トップページ(閲覧用記事一覧ページ)に遷移することができる。また、目安箱はこのサイトに対する感想や意見などをタイトルと本文に分けて書き、送信することができます。<br>
  感想、意見にも禁則ワードを指定することによって不適切な発言を防ぎました。<br>
-<img src="README_image/nヘッダー.png" alt="説明"><br>
-<img src="README_image/n目安箱.png" alt="説明"><br>
+<img src="README_image/nヘッダー.png" alt="説明" width="550"><br>
+<img src="README_image/n目安箱.png" alt="説明" width="550"><br>
 - サイト説明ページ<br>
 このページはこのサイトや製作者である私について説明するページです。<br>
 私の自己紹介やこのサイトの簡単な説明、私のXやgithubなどのリンクを記載しています。<br>
-<img src="README_image/n説明.png" alt="説明"><br>
+<img src="README_image/n説明.png" alt="説明" width="550"><br>
 - 目安箱ページ<br>
 目安箱ページでは送信された意見や感想を管理することができます。<br>
-<img src="README_image/n目安箱管理.png" alt="説明"><br>
+<img src="README_image/n目安箱管理.png" alt="説明" width="550"><br>
 - ログインページ<br>
 ログインページではメールアドレスとパスワードを用いてログイン、またはメールアドレスとパスワードを用いずにゲストログインを行うことができます<br>
 ゲストログインの場合は編集や新規作成などの一部機能が使用できなくなります。<br>
-<img src="README_image/nログイン.png" alt="説明"><br>
+<img src="README_image/nログイン.png" alt="説明" width="550"><br>
 <br>
 2.機能、特徴についての説明<br>
 
