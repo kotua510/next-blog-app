@@ -2,10 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getVisitorId } from "@/lib/visitor";
 
-export async function POST(
+export const POST = async (
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
-) {
+): Promise<Response> => {
   const { id } = await params;
   const visitorId = await getVisitorId();
 
@@ -19,14 +19,17 @@ export async function POST(
 
     return NextResponse.json({ success: true });
   } catch {
-    return NextResponse.json({ message: "既にいいね済み" }, { status: 400 });
+    return NextResponse.json(
+      { message: "既にいいね済み" },
+      { status: 400 }
+    );
   }
-}
+};
 
-export async function DELETE(
+export const DELETE = async (
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
-) {
+): Promise<Response> => {
   const { id } = await params;
   const visitorId = await getVisitorId();
 
@@ -38,12 +41,12 @@ export async function DELETE(
   });
 
   return NextResponse.json({ success: true });
-}
+};
 
-export async function GET(
+export const GET = async (
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
-) {
+): Promise<Response> => {
   const { id } = await params;
   const visitorId = await getVisitorId();
 
@@ -64,4 +67,4 @@ export async function GET(
     count,
     liked: !!liked,
   });
-}
+};
