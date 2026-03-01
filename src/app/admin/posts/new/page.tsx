@@ -1,182 +1,444 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { useRouter } from "next/navigation";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faSpinner } from "@fortawesome/free-solid-svg-icons";
+import { twMerge } from "tailwind-merge";
 import { useAuth } from "@/app/_hooks/useAuth";
+import { supabase } from "@/utils/supabase";
+import CryptoJS from "crypto-js";
 
-type Suggestion = {
+// 型定義
+type CategoryApiResponse = {
   id: string;
-  title: string;
-  content: string;
-  isHandled: boolean;
+  name: string;
   createdAt: string;
+  updatedAt: string;
 };
 
-type Filter = "all" | "handled" | "unhandled";
+type SelectableCategory = {
+  id: string;
+  name: string;
+  isSelect: boolean;
+};
+
+const calculateMD5Hash = async (file: File): Promise<string> => {
+  const buffer = await file.arrayBuffer();
+  const wordArray = CryptoJS.lib.WordArray.create(buffer);
+  return CryptoJS.MD5(wordArray).toString();
+};
+
+const BUCKET_NAME = "cover-image";
 
 const Page: React.FC = () => {
-  const { session } = useAuth();
+  const router = useRouter();
+  const { isLoading: authLoading, session, token } = useAuth();
 
-  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<Filter>("all");
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [fetchErrorMsg, setFetchErrorMsg] = useState<string | null>(null);
 
-  const isGuest = session?.user?.is_anonymous;
+  const [summary, setSummary] = useState("");
+  const [newTitle, setNewTitle] = useState("");
+  const [newContent, setNewContent] = useState("");
+  const [coverImageKey, setCoverImageKey] = useState<string | undefined>();
+  const [resultUrl, setResultUrl] = useState("");
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+
+  const [checkableCategories, setCheckableCategories] =
+    useState<SelectableCategory[] | null>(null);
+
+  const [categoryCols, setCategoryCols] = useState<2 | 3>(2);
+  const [categorySearch, setCategorySearch] = useState("");
 
   useEffect(() => {
-    fetch("/api/suggestions")
-      .then((r) => r.json())
-      .then((d) => setSuggestions(d))
-      .finally(() => setLoading(false));
-  }, []);
+    if (authLoading) return;
+    if (!session) router.replace("/login");
+  }, [authLoading, session, router]);
 
-  const filteredSuggestions = useMemo(() => {
-    if (filter === "handled") {
-      return suggestions.filter((s) => s.isHandled);
-    }
-    if (filter === "unhandled") {
-      return suggestions.filter((s) => !s.isHandled);
-    }
-    return suggestions;
-  }, [suggestions, filter]);
+  useEffect(() => {
+    if (!session) return;
 
-  const toggleHandled = async (id: string, current: boolean) => {
-    try {
-      const res = await fetch("/api/suggestions", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id,
-          isHandled: !current,
-        }),
-      });
+    const fetchCategories = async () => {
+      try {
+        setIsLoading(true);
 
-      if (!res.ok) {
-        alert("更新に失敗しました");
-        return;
+        const res = await fetch("/api/categories", {
+          method: "GET",
+          cache: "no-store",
+        });
+
+        if (!res.ok) {
+          throw new Error(`${res.status}: ${res.statusText}`);
+        }
+
+        const apiResBody = (await res.json()) as CategoryApiResponse[];
+
+        setCheckableCategories(
+          apiResBody.map((c) => ({
+            id: c.id,
+            name: c.name,
+            isSelect: false,
+          }))
+        );
+      } catch (error) {
+        const errorMsg =
+          error instanceof Error
+            ? `カテゴリ取得失敗: ${error.message}`
+            : `予期せぬエラー: ${error}`;
+
+        console.error(errorMsg);
+        setFetchErrorMsg(errorMsg);
+        setCheckableCategories(null);
+      } finally {
+        setIsLoading(false);
       }
+    };
 
-      setSuggestions((prev) =>
-        prev.map((s) =>
-          s.id === id ? { ...s, isHandled: !current } : s
-        )
-      );
-    } catch {
-      alert("通信エラー");
-    }
+    fetchCategories();
+  }, [session]);
+
+  const switchCategoryState = (id: string) => {
+    if (!checkableCategories) return;
+
+    setCheckableCategories(
+      checkableCategories.map((c) =>
+        c.id === id ? { ...c, isSelect: !c.isSelect } : c
+      )
+    );
   };
 
-  const deleteHandled = async () => {
-    if (isGuest) {
-      alert("ゲストユーザーは削除できません");
+  const handleImageUpload = async (file: File) => {
+    const hash = await calculateMD5Hash(file);
+    const path = `private/${hash}`;
+
+    const { data, error } = await supabase.storage
+      .from(BUCKET_NAME)
+      .upload(path, file, { upsert: true });
+
+    if (error || !data) {
+      alert("画像アップロードに失敗しました");
       return;
     }
 
-    if (!confirm("対応済みの意見をすべて削除しますか？")) return;
+    setCoverImageKey(data.path);
+  };
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    if (session?.user?.is_anonymous) {
+      alert("ゲストユーザーは投稿できません");
+      return;
+    }
+
+    if (!token) return;
+
+    if (resultUrl && !resultUrl.startsWith("http")) {
+      alert("URLはhttp(s)から始めてください");
+      return;
+    }
+
+    setIsSubmitting(true);
 
     try {
-      const res = await fetch("/api/suggestions", {
-        method: "DELETE",
+      const requestBody = {
+        title: newTitle,
+        content: newContent,
+        resultUrl: resultUrl || undefined,
+        summary: summary || undefined,
+        coverImageKey,
+        categoryIds: checkableCategories
+          ? checkableCategories.filter((c) => c.isSelect).map((c) => c.id)
+          : [],
+      };
+
+      const res = await fetch("/api/admin/posts", {
+        method: "POST",
+        cache: "no-store",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(requestBody),
       });
 
       if (!res.ok) {
-        alert("削除に失敗しました");
-        return;
+        throw new Error(`${res.status}: ${res.statusText}`);
       }
 
-      setSuggestions((prev) => prev.filter((s) => !s.isHandled));
-    } catch {
-      alert("通信エラー");
+      const postResponse = await res.json();
+      router.push(`/posts/${postResponse.id}`);
+    } catch (error) {
+      const msg =
+        error instanceof Error
+          ? error.message
+          : "予期せぬエラーが発生しました";
+      alert(msg);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  if (loading) return <div className="p-6">読み込み中...</div>;
+  const filteredCategories = useMemo(() => {
+    if (!checkableCategories) return [];
+
+    return checkableCategories.filter((cat) =>
+      cat.name.toLowerCase().includes(categorySearch.toLowerCase())
+    );
+  }, [checkableCategories, categorySearch]);
+
+  useEffect(() => {
+    return () => {
+      if (imagePreviewUrl) {
+        URL.revokeObjectURL(imagePreviewUrl);
+      }
+    };
+  }, [imagePreviewUrl]);
+
+  if (authLoading || !session) {
+    return (
+      <div className="text-gray-500">
+        <FontAwesomeIcon
+          icon={faSpinner}
+          className="mr-1 animate-spin"
+        />
+        認証確認中...
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="text-gray-500">
+        <FontAwesomeIcon
+          icon={faSpinner}
+          className="mr-1 animate-spin"
+        />
+        Loading...
+      </div>
+    );
+  }
+
+  if (!checkableCategories) {
+    return <div className="text-red-500">{fetchErrorMsg}</div>;
+  }
 
   return (
-    <main className="max-w-2xl mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">目安箱🗳️</h1>
+    <main className="space-y-4 px-4 sm:px-0">
+      <div className="flex flex-col gap-2 sm:hidden">
+        <button
+          onClick={() => router.push("/admin")}
+          className="rounded bg-gray-200 px-4 py-2 hover:bg-gray-300 text-center"
+        >
+          管理機能一覧へ
+        </button>
 
         <button
-          onClick={deleteHandled}
-          disabled={isGuest}
-          className={`text-sm px-3 py-2 text-white rounded transition ${
-            isGuest
-              ? "bg-gray-400 cursor-not-allowed"
-              : "bg-red-500 hover:bg-red-600"
-          }`}
+          onClick={() => router.push("/admin/posts")}
+          className="rounded bg-gray-200 px-4 py-2 hover:bg-gray-300 text-center"
         >
-          対応済みを一括削除🗑️
+          記事一覧へ
         </button>
       </div>
 
-      <div className="flex gap-2">
-        <button
-          onClick={() => setFilter("all")}
-          className={`px-3 py-1 rounded border ${
-            filter === "all" ? "bg-slate-800 text-white" : "bg-white"
-          }`}
-        >
-          すべて
-        </button>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <h1 className="text-2xl font-bold">投稿記事の新規作成</h1>
 
-        <button
-          onClick={() => setFilter("unhandled")}
-          className={`px-3 py-1 rounded border ${
-            filter === "unhandled"
-              ? "bg-slate-800 text-white"
-              : "bg-white"
-          }`}
-        >
-          未対応
-        </button>
+        <div className="hidden sm:flex sm:ml-auto gap-2">
+          <button
+            onClick={() => router.push("/admin")}
+            className="rounded bg-gray-200 px-4 py-2 hover:bg-gray-300"
+          >
+            管理機能一覧へ
+          </button>
 
-        <button
-          onClick={() => setFilter("handled")}
-          className={`px-3 py-1 rounded border ${
-            filter === "handled"
-              ? "bg-slate-800 text-white"
-              : "bg-white"
-          }`}
-        >
-          対応済み
-        </button>
+          <button
+            onClick={() => router.push("/admin/posts")}
+            className="rounded bg-gray-200 px-4 py-2 hover:bg-gray-300"
+          >
+            記事一覧へ
+          </button>
+        </div>
       </div>
 
-      {filteredSuggestions.length === 0 && (
-        <div className="text-gray-500">該当する投稿がありません</div>
+      {isSubmitting && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="flex items-center rounded-lg bg-white px-8 py-4 shadow-lg">
+            <FontAwesomeIcon
+              icon={faSpinner}
+              className="mr-2 animate-spin text-gray-500"
+            />
+            <div className="text-gray-500">処理中...</div>
+          </div>
+        </div>
       )}
 
-      <div className="space-y-4">
-        {filteredSuggestions.map((s) => (
+      <form
+        onSubmit={handleSubmit}
+        className={twMerge("space-y-4", isSubmitting && "opacity-50")}
+      >
+        <div>
+          <label className="block font-bold">タイトル</label>
+          <input
+            className="w-full rounded-md border-2 px-2 py-1"
+            value={newTitle}
+            onChange={(e) => setNewTitle(e.target.value)}
+            required
+          />
+        </div>
+
+        <div>
+          <label className="block font-bold">本文</label>
+          <textarea
+            className="h-48 w-full rounded-md border-2 px-2 py-1"
+            value={newContent}
+            onChange={(e) => setNewContent(e.target.value)}
+            required
+          />
+        </div>
+
+        <div className="relative">
+          <label className="block font-semibold mb-1">
+            要約（150文字以内）
+          </label>
+
+          <textarea
+            className="border p-2 w-full h-24 pr-14"
+            value={summary}
+            maxLength={150}
+            onChange={(e) => setSummary(e.target.value)}
+            placeholder="ユーザーに興味を持ってもらうための要約を書きましょう"
+          />
+
           <div
-            key={s.id}
-            className="border-2 border-slate-300 rounded-xl p-5 bg-white shadow-sm"
+            className={`absolute bottom-2 right-3 text-xs ${
+              summary.length >= 150 ? "text-red-500" : "text-gray-500"
+            }`}
           >
-            <div className="flex justify-between items-start mb-2">
-              <h2 className="font-bold text-lg">{s.title}</h2>
-
-              <button
-                onClick={() => toggleHandled(s.id, s.isHandled)}
-                className={`text-xs px-2 py-1 rounded font-semibold transition ${
-                  s.isHandled
-                    ? "bg-green-100 text-green-700 hover:bg-green-200"
-                    : "bg-gray-200 text-gray-600 hover:bg-gray-300"
-                }`}
-              >
-                {s.isHandled ? "対応済み" : "未対応"}
-              </button>
-            </div>
-
-            <div className="text-xs text-gray-500 mb-3">
-              {new Date(s.createdAt).toLocaleString()}
-            </div>
-
-            <div className="whitespace-pre-wrap text-gray-800">
-              {s.content}
-            </div>
+            {summary.length}/150
           </div>
-        ))}
-      </div>
+        </div>
+
+        <div>
+          <label className="block font-bold">成果物URL</label>
+          <input
+            type="url"
+            placeholder="何か成果物がある時はリポジトリやアプリのURLを記載しましょう"
+            className="w-full rounded-md border-2 px-2 py-1"
+            value={resultUrl}
+            onChange={(e) => setResultUrl(e.target.value)}
+          />
+
+          {resultUrl && (
+            <div className="mt-1 text-sm text-red-500">
+              httpかhttpsで始めてください
+            </div>
+          )}
+        </div>
+
+        <div>
+          <label className="block font-bold mb-1">カバー画像</label>
+
+          <label
+            htmlFor="cover-image"
+            className="inline-block cursor-pointer rounded-md bg-indigo-500 px-5 py-1 font-bold text-white hover:bg-indigo-600"
+          >
+            画像を選択
+          </label>
+
+          <input
+            id="cover-image"
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={async (e) => {
+              if (!e.target.files || e.target.files.length === 0) return;
+
+              const file = e.target.files[0];
+              setImagePreviewUrl(URL.createObjectURL(file));
+              await handleImageUpload(file);
+            }}
+          />
+
+          {imagePreviewUrl && (
+            <img
+              src={imagePreviewUrl}
+              alt="cover preview"
+              className="mt-2 h-32 rounded border object-contain"
+            />
+          )}
+
+          {coverImageKey && (
+            <div className="mt-1 break-all text-xs text-gray-500">
+              coverImageKey: {coverImageKey}
+            </div>
+          )}
+        </div>
+
+        <div className="hidden sm:flex items-center gap-2">
+          <span className="font-bold">タグ表示</span>
+
+          <button
+            type="button"
+            onClick={() => setCategoryCols(2)}
+            className={`rounded border px-2 py-1 ${
+              categoryCols === 2 ? "bg-blue-600 text-white" : ""
+            }`}
+          >
+            2列
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setCategoryCols(3)}
+            className={`rounded border px-2 py-1 ${
+              categoryCols === 3 ? "bg-blue-600 text-white" : ""
+            }`}
+          >
+            3列
+          </button>
+        </div>
+
+        <div>
+          <input
+            type="text"
+            placeholder="カテゴリ名で検索..."
+            value={categorySearch}
+            onChange={(e) => setCategorySearch(e.target.value)}
+            className="w-full rounded-md border px-3 py-2"
+          />
+        </div>
+
+        <div
+          className={twMerge(
+            "grid gap-3 grid-cols-2",
+            categoryCols === 3 && "sm:grid-cols-3"
+          )}
+        >
+          {filteredCategories.map((c) => (
+            <label key={c.id} className="flex gap-1">
+              <input
+                type="checkbox"
+                checked={c.isSelect}
+                onChange={() => switchCategoryState(c.id)}
+              />
+              <span className="break-words">{c.name}</span>
+            </label>
+          ))}
+        </div>
+
+        <div className="flex justify-end">
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="rounded-md bg-indigo-500 px-5 py-1 font-bold text-white hover:bg-indigo-600 disabled:opacity-50"
+          >
+            記事を投稿📝
+          </button>
+        </div>
+      </form>
     </main>
   );
 };
