@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
+import { useAuth } from "@/app/_hooks/useAuth";
 
 type Suggestion = {
   id: string;
@@ -16,6 +17,9 @@ const Page: React.FC = () => {
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<Filter>("all");
+  const { session } = useAuth();
+
+  const isGuest = session?.user?.is_anonymous;
 
   useEffect(() => {
     fetch("/api/suggestions")
@@ -61,6 +65,11 @@ const Page: React.FC = () => {
   };
   
   const deleteHandled = async () => {
+  if (isGuest) {
+    alert("ゲストユーザーは削除できません");
+    return;
+  }
+
   if (!confirm("対応済みの意見をすべて削除しますか？")) return;
 
   try {
