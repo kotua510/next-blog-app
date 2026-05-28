@@ -49,7 +49,6 @@ export const GET = async (
 ): Promise<Response> => {
   const { id } = await params;
   const visitorId = await getVisitorId();
-
   const count = await prisma.commentLike.count({
     where: { commentId: id },
   });

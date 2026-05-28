@@ -33,8 +33,7 @@ export const useAuth = () => {
         setToken(session?.access_token || null);
       }
     );
-
-    // アンマウント時に監視を解除（クリーンアップ）
+    
     return () => authListener?.subscription?.unsubscribe();
   }, []);
 

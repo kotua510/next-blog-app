@@ -25,11 +25,9 @@ const ITEMS_PER_PAGE = 8;
 
 const AdminPostsPage = () => {
   const { token, isLoading: authLoading } = useAuth();
-
   const [posts, setPosts] = useState<AdminPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
   const [searchTerm, setSearchTerm] = useState("");
   const [resultUrl, setResultUrl] = useState("");
   const [currentPage, setCurrentPage] = useState(1);

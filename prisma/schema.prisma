@@ -11,7 +11,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql" // 変更
+  provider = "postgresql"
 }
 
 // 投稿記事テーブル
@@ -65,7 +65,7 @@ model Suggestion {
   id        String   @id @default(uuid())
   title     String
   content   String
-  isHandled Boolean  @default(false) // ← 対応済み
+  isHandled Boolean  @default(false)
   createdAt DateTime @default(now())
 }
 
@@ -77,7 +77,7 @@ model PostLike {
   createdAt DateTime @default(now())
   postId    String
   post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
-  @@unique([postId, visitorId]) // 同じ人の連打防止
+  @@unique([postId, visitorId])
 }
 
 

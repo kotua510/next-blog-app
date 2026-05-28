@@ -1,18 +1,18 @@
 import { prisma } from "@/lib/prisma";
 
 const main = async () => {
-  // 各テーブルから既存の全レコードを削除
+  // 各テーブルの既存の全レコードを削除
   await prisma.postCategory?.deleteMany();
   await prisma.post?.deleteMany();
   await prisma.category?.deleteMany();
 
-  // カテゴリデータの作成 (レコードのInsert)
+  // カテゴリデータの作成
   const c1 = await prisma.category.create({ data: { name: "カテゴリ1" } });
   const c2 = await prisma.category.create({ data: { name: "カテゴリ2" } });
   const c3 = await prisma.category.create({ data: { name: "カテゴリ3" } });
   const c4 = await prisma.category.create({ data: { name: "カテゴリ4" } });
 
-  // 投稿記事データの作成 (レコードのInsert)
+  // 投稿記事データの作成
   const p1 = await prisma.post.create({
     data: {
       title: "投稿1",

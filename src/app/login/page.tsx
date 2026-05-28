@@ -13,7 +13,6 @@ const Page: React.FC = () => {
   const [password, setPassword] = useState("");
   const [emailError, setEmailError] = useState("");
   const [loginError, setLoginError] = useState("");
-
   const router = useRouter();
 
   const updateEmailField = (value: string) => {

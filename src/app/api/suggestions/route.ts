@@ -1,7 +1,13 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-const NG_WORDS = ["ばか", "死ね", "NGワード1","NGワード2"];
+// 禁則文字リスト
+const NG_WORDS = [
+  "ばか",
+  "死ね",
+  "NGワード1",
+  "NGワード2"
+];
 
 function containsNgWord(text: string) {
   return NG_WORDS.some((w) => text.includes(w));
@@ -10,7 +16,6 @@ function containsNgWord(text: string) {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-
     const title = body.title?.trim();
     const content = body.content?.trim();
 

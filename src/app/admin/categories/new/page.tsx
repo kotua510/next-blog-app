@@ -24,15 +24,12 @@ const Page: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [fetchErrorMsg, setFetchErrorMsg] = useState<string | null>(null);
-
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newCategoryNameError, setNewCategoryNameError] = useState("");
-
   const [searchTerm, setSearchTerm] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("new");
-
   const [categories, setCategories] = useState<Category[] | null>(null);
-
+  
   const fetchCategories = async () => {
     try {
       setIsLoading(true);

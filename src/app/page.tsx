@@ -10,16 +10,13 @@ import { faSpinner } from "@fortawesome/free-solid-svg-icons";
 type ViewMode = "list" | "grid";
 type SortKey = "new" | "old" | "title";
 type CheckKey = "name" | "category";
-
 type RankedPost = Post & { rank: number };
 
 const ITEMS_PER_PAGE = 6;
-
 const Page: React.FC = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-
   const [searchTerm, setSearchTerm] = useState("");
   const [checkKey, setCheckKey] = useState<CheckKey>("name");
   const [sortKey, setSortKey] = useState<SortKey>("new");
@@ -99,7 +96,6 @@ useEffect(() => {
 
 
   const totalPages = Math.ceil(sortedPosts.length / ITEMS_PER_PAGE);
-
   const paginatedPosts = useMemo(() => {
     const start = (currentPage - 1) * ITEMS_PER_PAGE;
     return sortedPosts.slice(start, start + ITEMS_PER_PAGE);

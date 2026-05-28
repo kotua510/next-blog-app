@@ -1,4 +1,3 @@
-// src/app/_hooks/useRouteGuard.ts
 import { useAuth } from "@/app/_hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";

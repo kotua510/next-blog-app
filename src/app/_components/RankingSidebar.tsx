@@ -12,7 +12,7 @@ const RankingSidebar: React.FC<Props> = ({ title, posts }) => {
   const isLike = title.includes("いいね");
   const mainTitle = isLike ? "いいね❤" : "閲覧数👀";
 
-  //順位ごとの色変更
+  //順位で色を変更
   const getRankColor = (rank: number) => {
     if (rank === 1) return "text-yellow-500"; 
     if (rank === 2) return "text-gray-400";   
@@ -36,10 +36,10 @@ const RankingSidebar: React.FC<Props> = ({ title, posts }) => {
           <Link key={p.id} href={`/posts/${p.id}`}>
             <div
               className="flex justify-between items-start
-                         border-b pb-3
-                         text-base
-                         hover:text-blue-600
-                         transition"
+                        border-b pb-3
+                        text-base
+                      hover:text-blue-600
+                        transition"
             >
               <span className="font-semibold leading-snug">
                 <span

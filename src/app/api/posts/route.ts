@@ -43,7 +43,6 @@ export const GET = async (req: NextRequest) => {
       ...post,
 
       categories: post.categories.map((pc) => pc.category),
-
       likeCount: post._count.likes,
       commentCount: post._count.comments,
       resultUrl: post.resultUrl,

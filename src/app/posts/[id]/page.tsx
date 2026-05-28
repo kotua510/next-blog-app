@@ -24,17 +24,13 @@ type RecommendedPost = {
 
 const Page: React.FC = () => {
   const { id } = useParams() as { id: string };
-
   const [post, setPost] = useState<PostForDetail | null>(null);
   const [coverImageUrl, setCoverImageUrl] = useState<string | null>(null);
-
   const [postLikes, setPostLikes] = useState(0);
   const [liked, setLiked] = useState(false);
   const [likeLoading, setLikeLoading] = useState(false);
-
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
-
   const [recommended, setRecommended] = useState<RecommendedPost[]>([]);
 
   useEffect(() => {
@@ -76,7 +72,6 @@ useEffect(() => {
   if (!post) return <div>Loading...</div>;
 
   const safeHTML = DOMPurify.sanitize(post.content);
-
 const getImageUrl = (key?: string | null) => {
   if (!key) return null;
   const { data } = supabase.storage.from("cover-image").getPublicUrl(key);
@@ -102,6 +97,7 @@ const getImageUrl = (key?: string | null) => {
     }
   };
 
+  // 禁則文字リスト
   const NG_WORDS = [
   "死ね",
   "ばか",
@@ -296,10 +292,10 @@ const RecommendedImage: React.FC<{
               key={r.id}
               href={`/posts/${r.id}`}
               className="min-w-[160px] md:min-w-[180px]
-                         max-w-[160px] md:max-w-[180px]
-                         flex-shrink-0
-                         border rounded-lg p-2 bg-white
-                         hover:shadow-md transition"
+                        max-w-[160px] md:max-w-[180px]
+                        flex-shrink-0
+                        border rounded-lg p-2 bg-white
+                        hover:shadow-md transition"
             >
               {r.coverImageKey && (
                 <RecommendedImage

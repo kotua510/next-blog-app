@@ -18,7 +18,6 @@ const Page: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<Filter>("all");
   const { session } = useAuth();
-
   const isGuest = session?.user?.is_anonymous;
 
   useEffect(() => {

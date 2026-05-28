@@ -25,7 +25,6 @@ export const GET = async (req: NextRequest) => {
   }
 
   const token = authHeader.replace("Bearer ", "");
-
   const { data, error } = await supabase.auth.getUser(token);
 
   if (error || !data.user) {

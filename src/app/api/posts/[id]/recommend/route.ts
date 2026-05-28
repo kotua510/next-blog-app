@@ -28,7 +28,6 @@ export async function GET(
     }
 
     const categoryIds = post.categories.map((c) => c.categoryId);
-
     let recommended: RecommendedItem[] = [];
 
     if (categoryIds.length > 0) {
@@ -74,9 +73,7 @@ if (recommended.length < 5) {
   });
 
   const shuffled = pool.sort(() => Math.random() - 0.5);
-
   const randomPosts = shuffled.slice(0, 5 - recommended.length);
-
   const randomItems: RecommendedItem[] = randomPosts.map((p) => ({
     id: p.id,
     title: p.title,

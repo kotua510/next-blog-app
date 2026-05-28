@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getVisitorId } from "@/lib/visitor";
 
+// 禁則文字リスト
 const NG_WORDS = [
   "死ね",
   "ばか",

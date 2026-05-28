@@ -9,7 +9,6 @@ import { useAuth } from "@/app/_hooks/useAuth";
 import { supabase } from "@/utils/supabase";
 import CryptoJS from "crypto-js";
 
-// 型定義
 type CategoryApiResponse = {
   id: string;
   name: string;
@@ -34,21 +33,17 @@ const BUCKET_NAME = "cover-image";
 const Page: React.FC = () => {
   const router = useRouter();
   const { isLoading: authLoading, session, token } = useAuth();
-
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [fetchErrorMsg, setFetchErrorMsg] = useState<string | null>(null);
-
   const [summary, setSummary] = useState("");
   const [newTitle, setNewTitle] = useState("");
   const [newContent, setNewContent] = useState("");
   const [coverImageKey, setCoverImageKey] = useState<string | undefined>();
   const [resultUrl, setResultUrl] = useState("");
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
-
   const [checkableCategories, setCheckableCategories] =
     useState<SelectableCategory[] | null>(null);
-
   const [categoryCols, setCategoryCols] = useState<2 | 3>(2);
   const [categorySearch, setCategorySearch] = useState("");
 
