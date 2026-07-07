@@ -8,7 +8,7 @@ export const useAuth = () => {
   const [token, setToken] = useState<string | null>(null);
 
   useEffect(() => {
-    // 初期セッションの取得
+    // 初期セッションの取得#####
     const initAuth = async () => {
       try {
         const {
